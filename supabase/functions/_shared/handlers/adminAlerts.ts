@@ -6,7 +6,11 @@ import type { Handler } from "./context.ts";
 export const adminAlerts: Handler = async (ctx) => {
   if (!ctx.isService) return fail(403, "הפעולה שמורה למערכת.");
   if (!ctx.adminChatId || !ctx.senders) return ok({ sent: 0, note: "alerts are not configured" });
-  const stats = await ctx.store.adminStats(new Date(ctx.now.getTime() - 3_600_000).toISOString());
+  const base = await ctx.store.adminStats(new Date(ctx.now.getTime() - 3_600_000).toISOString());
+  // The last price check counts only while it is recent, so one old refusal does not alert forever.
+  const scrape = (await ctx.store.getPrivateSetting("scrape_state")) as { at?: string; blocked?: boolean } | null;
+  const recent = scrape?.at ? ctx.now.getTime() - Date.parse(scrape.at) < 12 * 3_600_000 : false;
+  const stats = { ...base, scrapeBlocked: recent && scrape?.blocked ? 1 : 0 };
   const last = ((await ctx.store.getPrivateSetting("admin_alert_state")) ?? {}) as Record<string, string>;
   const { alerts, state } = evaluateAlerts(stats, last, ctx.now);
   let sent = 0;

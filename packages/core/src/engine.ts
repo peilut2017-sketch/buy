@@ -2,6 +2,7 @@
 // No network calls here: detection works on the page that is already loaded.
 
 import { decideDetection, normalizeSku, type SignalReading } from "./detection.ts";
+import { summarizeOffers } from "../../../supabase/functions/_shared/pageParse.ts";
 import type {
   AdapterConfig,
   Detection,
@@ -157,13 +158,6 @@ export function parsePriceText(text: string | null | undefined): number | null {
   return Number.isFinite(value) && value >= 0 ? value : null;
 }
 
-function availabilityToStock(value: unknown): boolean | null {
-  if (typeof value !== "string") return null;
-  if (/InStock|LimitedAvailability|OnlineOnly/i.test(value)) return true;
-  if (/OutOfStock|SoldOut|Discontinued/i.test(value)) return false;
-  return null;
-}
-
 /** Structured data first (a web standard), then the configured selectors. */
 export function readPriceStockWithConfig(doc: Document, cfg: AdapterConfig): PriceSnapshot | null {
   let price: number | null = null;
@@ -174,17 +168,10 @@ export function readPriceStockWithConfig(doc: Document, cfg: AdapterConfig): Pri
   const ld = cfg.signals.jsonLd;
   const product = ld ? jsonLdProduct(doc, ld.type) : null;
   if (product) {
-    const offers = product.offers;
-    const list = (Array.isArray(offers) ? offers : [offers]).filter((o): o is Record<string, unknown> => typeof o === "object" && o !== null);
-    const offer = list[0];
-    if (offer) {
-      const p = offer.price ?? offer.lowPrice;
-      price = typeof p === "number" ? p : parsePriceText(typeof p === "string" ? p : null);
-      if (typeof offer.priceCurrency === "string") currency = offer.priceCurrency;
-      // One offer per size: the product is in stock when any size is, and out of stock only when every size is known to be.
-      const stocks = list.map((o) => availabilityToStock(o.availability));
-      inStock = stocks.some((s) => s === true) ? true : stocks.length > 0 && stocks.every((s) => s === false) ? false : null;
-    }
+    const summary = summarizeOffers(product.offers);
+    price = summary.price;
+    if (summary.currency) currency = summary.currency;
+    inStock = summary.inStock;
   }
   if (cfg.price) {
     const fromPage = parsePriceText(doc.querySelector(cfg.price.selector)?.textContent);

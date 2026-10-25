@@ -98,8 +98,8 @@ export function createStore(sql: Sql, options: StoreOptions): Store {
     },
 
     async getSite(id): Promise<SiteRow | null> {
-      const [r] = await sql`select id, status, adapter_config from public.sites where id = ${id}`;
-      return r ? { id: r.id, status: r.status, adapterConfig: r.adapter_config ?? {} } : null;
+      const [r] = await sql`select id, status, adapter_config, domains from public.sites where id = ${id}`;
+      return r ? { id: r.id, status: r.status, adapterConfig: r.adapter_config ?? {}, domains: r.domains ?? [] } : null;
     },
 
     async getProfile(userId): Promise<ProfileRow | null> {
@@ -416,7 +416,20 @@ export function createStore(sql: Sql, options: StoreOptions): Store {
     },
 
     async insertPriceEvent(i) {
-      await sql`insert into public.price_events (variant_id, price, currency, in_stock, observed_at, source, install_hash) values (${i.variantId}, ${i.price}, ${i.currency}, ${i.inStock}, ${i.now}, 'user_report', ${i.installHash})`;
+      await sql`insert into public.price_events (variant_id, price, currency, in_stock, observed_at, source, install_hash) values (${i.variantId}, ${i.price}, ${i.currency}, ${i.inStock}, ${i.now}, ${i.source ?? 'user_report'}, ${i.installHash})`;
+    },
+
+    async listScrapeTargets(olderThanIso, limit) {
+      const rows = await sql`
+        select v.id as variant_id, v.sku, p.site_id
+        from public.variants v
+        join public.products p on p.id = v.product_id
+        join public.sites s on s.id = p.site_id and s.status <> 'paused'
+        where exists (select 1 from public.watches w where w.active and w.product_id = p.id and (w.variant_id is null or w.variant_id = v.id))
+          and coalesce((select max(e.observed_at) from public.price_events e where e.variant_id = v.id), 'epoch'::timestamptz) < ${olderThanIso}::timestamptz
+        order by v.id
+        limit ${limit}`;
+      return rows.map((r) => ({ variantId: Number(r.variant_id), siteId: r.site_id as string, sku: r.sku as string }));
     },
 
     // ---- phase 2: notifications

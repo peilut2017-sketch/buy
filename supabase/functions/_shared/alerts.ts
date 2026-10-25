@@ -25,6 +25,7 @@ export function evaluateAlerts(stats: AdminStats, lastSent: Record<string, strin
   }
   if (stats.failedNotifications >= FAILED_NOTIFICATIONS_ALERT) found.push({ key: "notify-failed", text: `${stats.failedNotifications} התראות נכשלו בשליחה בשעה האחרונה.` });
   if (stats.newReports >= REPORTS_ALERT) found.push({ key: "reports", text: `קפיצה בדיווחים: ${stats.newReports} דיווחים חדשים בשעה האחרונה.` });
+  if (stats.scrapeBlocked) found.push({ key: "scrape-blocked", text: "בדיקת המחירים האוטומטית נחסמה על ידי החנות. הסריקה נעצרה. כדאי לבדוק את הלוג ואת התנאים מול החנות." });
   if (stats.newWaveFlags > 0) found.push({ key: "review-wave", text: `זוהה גל ביקורות חשוד (${stats.newWaveFlags}). כדאי לבדוק בתור הפיקוח.` });
 
   const state = { ...lastSent };

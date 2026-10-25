@@ -22,6 +22,9 @@ export interface Ctx {
   /** Telegram chat that receives admin alerts. */
   adminChatId?: string;
   websiteUrl?: string;
+  /** Fetches a web page for the scheduled price check. Injected so tests never touch the network. */
+  fetchPage?: (url: string) => Promise<{ status: number; text: string }>;
+  sleep?: (ms: number) => Promise<void>;
 }
 
 export type Handler = (ctx: Ctx, body: unknown) => Promise<HttpResult>;

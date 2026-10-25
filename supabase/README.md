@@ -92,6 +92,7 @@ select public.recompute_reviewer_stats();
 | `select public.enqueue_weekly_digest();` | פעם ביום בבוקר (הכפילות נחסמת לפי שבוע) | סיכום שבועי, רק למי שהפעיל אותו ורק כשמשהו השתנה |
 | `select public.recompute_reviewer_stats();` | כל שעה | רמות מדרגים |
 | `admin-alerts` | כל 15 דקות | התראות מנהל בטלגרם |
+| `scrape-watched` | פעמיים ביום, למשל 06:00 ו-18:00 | בדיקת מחיר ומלאי של מוצרים במעקב, עד 60 בריצה. דורשת `pageUrl` ו-`signals.jsonLd` ב-`sites.adapter_config`. נעצרת בחסימה ומתריעה |
 
 **פריסת פונקציות:** `supabase functions deploy <name>` לכל תיקייה ב-`supabase/functions/` (חוץ מ-`_shared`). רק `telegram-webhook` נפרסת עם `--no-verify-jwt`, כי טלגרם לא שולח JWT והפונקציה מאמתת את סוד ה-webhook בעצמה. כל השאר מקבלות את מפתח ה-anon או את טוקן המשתמש כרגיל.
 

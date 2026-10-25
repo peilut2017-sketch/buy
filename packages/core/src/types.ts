@@ -131,6 +131,8 @@ export interface AdapterConfig {
   productType: string;
   /** Name of the variant group that holds the size on this store, as the page shows it. Enables personal size advice. */
   sizeGroup?: string;
+  /** Address of a product page for the scheduled price check, with {sku} where the SKU goes. Must be on one of the store's domains. */
+  pageUrl?: string;
   /** Name of the variant group that holds the colour. Enables the colour filter on reviews. */
   colorGroup?: string;
 }

@@ -36,7 +36,8 @@ export interface SiteRow {
   id: string;
   status: "active" | "beta" | "paused";
   /** Detection rules as stored in sites.adapter_config. Only the fields the server relies on are typed. */
-  adapterConfig: { parentSku?: { fromSku?: string }; productType?: string };
+  adapterConfig: { parentSku?: { fromSku?: string }; productType?: string; pageUrl?: string; signals?: { jsonLd?: { type: string; skuPath: string; skuRegex?: string } } };
+  domains: string[];
 }
 
 export interface ProfileRow {
@@ -144,8 +145,16 @@ export interface PriceEventInput {
   price: number | null;
   currency: string;
   inStock: boolean | null;
-  installHash: string;
+  /** Null for the scheduled price check: no install is involved. */
+  installHash: string | null;
+  source?: "user_report" | "scrape";
   now: string;
+}
+
+export interface ScrapeTarget {
+  variantId: number;
+  siteId: string;
+  sku: string;
 }
 
 export interface LastPrice {
@@ -172,6 +181,8 @@ export interface AdminStats {
   failedNotifications: number;
   newReports: number;
   newWaveFlags: number;
+  /** Pages the scheduled price check was refused on in its last run. */
+  scrapeBlocked?: number;
 }
 
 export interface Store {
@@ -240,6 +251,8 @@ export interface Store {
   addOutlierCandidate(input: { variantId: number; price: number; inStock: boolean | null; installHash: string; now: string }): Promise<void>;
   clearOutlierCandidates(variantId: number, price: number): Promise<void>;
   insertPriceEvent(input: PriceEventInput): Promise<void>;
+  /** Variants of watched products that have no price observation newer than `olderThanIso`, oldest first. */
+  listScrapeTargets(olderThanIso: string, limit: number): Promise<ScrapeTarget[]>;
 
   // ---- phase 2: notifications
   enqueueReminders(now: string): Promise<void>;

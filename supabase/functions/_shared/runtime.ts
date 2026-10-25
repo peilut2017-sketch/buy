@@ -93,6 +93,16 @@ export function serveHandler(handler: Handler): void {
         telegramBotUsername: Deno.env.get("TELEGRAM_BOT_USERNAME"),
         adminChatId: Deno.env.get("ADMIN_TELEGRAM_CHAT_ID"),
         websiteUrl: Deno.env.get("WEBSITE_URL"),
+        // The price check says who it is and where to complain, and gives up quickly on a slow page.
+        fetchPage: async (url) => {
+          const res = await fetch(url, {
+            headers: { "user-agent": `SmartBuyPriceCheck/1.0 (+${Deno.env.get("WEBSITE_URL") ?? "https://smartbuy.invalid"}/how-it-works)`, "accept-language": "he-IL,he;q=0.9" },
+            redirect: "follow",
+            signal: AbortSignal.timeout(20_000),
+          });
+          return { status: res.status, text: res.status === 200 ? await res.text() : "" };
+        },
+        sleep: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
       };
       return json(await handler(ctx, body));
     } catch (error) {

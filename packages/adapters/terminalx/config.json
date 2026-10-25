@@ -22,5 +22,6 @@
   "emailDomains": ["terminalx.com"],
   "productType": "apparel",
   "sizeGroup": "מידה",
-  "colorGroup": "צבע"
+  "colorGroup": "צבע",
+  "pageUrl": "https://www.terminalx.com/product/{sku}"
 }

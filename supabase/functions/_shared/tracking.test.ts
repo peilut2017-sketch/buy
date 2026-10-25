@@ -5,6 +5,9 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { evaluateAlerts, REPEAT_AFTER_MS } from "./alerts.ts";
 import { adminAlerts } from "./handlers/adminAlerts.ts";
 import { extensionNotifications, israelDayStart, sendNotifications, setChannel, telegramLink, telegramWebhook } from "./handlers/notifications.ts";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+import { scrapeWatched, DELAY_MS } from "./handlers/scrapeWatched.ts";
 import { reportPrices } from "./handlers/reportPrices.ts";
 import { submitReview } from "./handlers/submitReview.ts";
 import { createSenders, emailHtml, type Fetch } from "./senders.ts";
@@ -260,6 +263,96 @@ describe.skipIf(!TEST_DB_URL)("phase 2 on PostgreSQL", () => {
       await pricedWatch("alice", 150, 150);
       await db.raw`update public.notification_prefs set enabled = true where user_id = ${USERS.alice} and kind = 'weekly_digest'`;
       expect(await digest()).toHaveLength(0);
+    });
+  });
+
+  describe("scrape-watched (the scheduled price check, on real saved pages)", () => {
+    const page = (file: string) => readFileSync(resolve(__dirname, "../../../tests/fixtures/terminalx", file), "utf8");
+    const SKU = "k047460001";
+    const RULES = {
+      ...{ parentSku: { fromSku: "^([a-z]\\d{5})" }, productType: "apparel" },
+      pageUrl: "https://www.terminalx.com/product/{sku}",
+      signals: { jsonLd: { type: "Product", skuPath: "sku", skuRegex: "^([a-z]\\d{5}(?:\\d{4})?)$" } },
+    };
+    const fetched: string[] = [];
+    const slept: number[] = [];
+    let respond: (url: string) => { status: number; text: string } = () => ({ status: 200, text: page("product-shirt-K047460001.html") });
+    const run = (over = {}) => scrapeWatched(service({ fetchPage: async (url: string) => (fetched.push(url), respond(url)), sleep: async (ms: number) => void slept.push(ms), ...over }), {});
+    const events = () => db.raw`select price, in_stock, source, install_hash from public.price_events order by id`;
+
+    beforeEach(async () => {
+      fetched.length = 0;
+      slept.length = 0;
+      respond = () => ({ status: 200, text: page("product-shirt-K047460001.html") });
+      await db.raw`truncate public.watches, public.price_events restart identity cascade`;
+      await db.raw`delete from public.settings where key = 'scrape_state'`;
+      await db.raw`update public.sites set adapter_config = ${db.raw.json(RULES)}, status = 'beta' where id = 'terminalx'`;
+      await price(INSTALL_A, 200, true, SKU);
+      const old = new Date(NOW.getTime() - 24 * 3_600_000).toISOString();
+      await db.raw`update public.price_events set observed_at = ${old}`;
+      await db.raw`insert into public.watches (user_id, product_id, variant_id, target_price) values (${USERS.alice}, ${await productId("k04746")}, ${await variantId(SKU)}, 100)`;
+    });
+
+    it("is only for the scheduler", async () => {
+      expect((await scrapeWatched(ctxFor(db, "alice"), {})).status).toBe(403);
+      expect(fetched).toHaveLength(0);
+    });
+
+    it("reads price and stock from the real page, stores the change as a scrape with no install, and then leaves the product alone for half a day", async () => {
+      const res = await run();
+      expect(res.body).toMatchObject({ checked: 1, changed: 1, failed: 0, mismatched: 0, blocked: false });
+      expect(fetched).toEqual(["https://www.terminalx.com/product/K047460001"]);
+      expect(await events()).toEqual([
+        { price: "200.00", in_stock: true, source: "user_report", install_hash: expect.any(String) },
+        { price: "269.00", in_stock: true, source: "scrape", install_hash: null },
+      ]);
+      expect((await run()).body).toMatchObject({ checked: 0, changed: 0 });
+    });
+
+    it("records nothing when the page shows what is already stored", async () => {
+      await db.raw`update public.price_events set price = 269`;
+      expect((await run()).body).toMatchObject({ checked: 1, unchanged: 1, changed: 0 });
+      expect(await events()).toHaveLength(1);
+    });
+
+    it("stops at the first refusal, says so, and the admin is alerted once", async () => {
+      await price(INSTALL_B, 150, true, "k088900001"); // a second watched product
+      await db.raw`update public.price_events set observed_at = ${new Date(NOW.getTime() - 24 * 3_600_000).toISOString()}`;
+      await db.raw`insert into public.watches (user_id, product_id, variant_id, notify_restock) values (${USERS.alice}, ${await productId("k08890")}, ${await variantId("k088900001")}, true)`;
+      respond = () => ({ status: 429, text: "" });
+      const res = await run();
+      expect(res.body).toMatchObject({ checked: 1, blocked: true, changed: 0 });
+      expect(fetched).toHaveLength(1);
+
+      const alert = await adminAlerts(service({ adminChatId: "99" }), {});
+      expect(alert.body).toMatchObject({ sent: 1 });
+      expect(sent.some((m) => m.to === "99" && m.text.includes("נחסמה"))).toBe(true);
+    });
+
+    it("never writes a price on the wrong product: a page for another SKU is ignored", async () => {
+      respond = () => ({ status: 200, text: page("product-pants-K088900001.html") });
+      expect((await run()).body).toMatchObject({ checked: 1, mismatched: 1, changed: 0 });
+      expect(await events()).toHaveLength(1);
+    });
+
+    it("counts a failing page and carries on, and waits between pages", async () => {
+      await price(INSTALL_B, 150, true, "k088900001");
+      await db.raw`update public.price_events set observed_at = ${new Date(NOW.getTime() - 24 * 3_600_000).toISOString()}`;
+      await db.raw`insert into public.watches (user_id, product_id, variant_id, notify_restock) values (${USERS.alice}, ${await productId("k08890")}, ${await variantId("k088900001")}, true)`;
+      respond = (url) => (url.includes("K047460001") ? { status: 500, text: "" } : { status: 200, text: page("product-pants-K088900001.html") });
+      const res = await run();
+      expect(res.body).toMatchObject({ checked: 2, failed: 1, changed: 1 });
+      expect(slept).toEqual([DELAY_MS]);
+    });
+
+    it("stays on the store's own domains, and skips a store without rules or a paused store", async () => {
+      await db.raw`update public.sites set adapter_config = ${db.raw.json({ ...RULES, pageUrl: "https://evil.example/{sku}" })} where id = 'terminalx'`;
+      expect((await run()).body).toMatchObject({ checked: 0 });
+      await db.raw`update public.sites set adapter_config = ${db.raw.json({ parentSku: RULES.parentSku, productType: "apparel" })} where id = 'terminalx'`;
+      expect((await run()).body).toMatchObject({ checked: 0 });
+      await db.raw`update public.sites set adapter_config = ${db.raw.json(RULES)}, status = 'paused' where id = 'terminalx'`;
+      expect((await run()).body).toMatchObject({ checked: 0 });
+      expect(fetched).toHaveLength(0);
     });
   });
 
