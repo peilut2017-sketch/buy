@@ -1,0 +1,12 @@
+{
+  "productUrl": "^/([a-z]\\d{5,9})/?$",
+  "signals": {
+    "canonical": { "selector": "link[rel='canonical']", "attr": "href", "skuRegex": "/([a-z]\\d{5,9})/?(?:[?#].*)?$" },
+    "ogUrl": { "selector": "meta[property='og:url']", "attr": "content", "skuRegex": "/([a-z]\\d{5,9})/?(?:[?#].*)?$" },
+    "image": { "selector": "meta[property='og:image']", "attr": "content", "skuRegex": "/([a-z]\\d{9})-\\d+\\.(?:jpe?g|png|webp)" },
+    "jsonLd": { "type": "Product", "skuPath": "sku", "skuRegex": "^([a-z]\\d{5,9})$" }
+  },
+  "parentSku": { "fromSku": "^(.{6})" },
+  "emailDomains": [],
+  "productType": "apparel"
+}

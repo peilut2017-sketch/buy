@@ -1,0 +1,57 @@
+/* SmartBuy design tokens. Source of truth: docs/02-design-system.md, section 2.1.
+   Loaded inside every shadow root (:host) and on every page (:root). Values only; no component styles here. */
+:host, :root {
+  /* color */
+  --sb-canvas: #F5F6F8;
+  --sb-surface: #FFFFFF;
+  --sb-text-primary: #1D1D1F;
+  --sb-text-secondary: #686B73;
+  --sb-divider: rgba(30, 35, 45, 0.09);
+  --sb-control-border: rgba(30, 35, 45, 0.16);
+  --sb-accent: #087FE8;          /* tints, focus rings, switches, chart target line */
+  --sb-accent-strong: #0870D0;   /* filled buttons with white text (see 2.2) */
+  --sb-accent-text: #0864BA;     /* accent-coloured text on white */
+  --sb-success: #248A52;
+  --sb-success-text: #1D6E42;
+  --sb-warning: #B87516;
+  --sb-danger: #C53B3B;
+  --sb-danger-text: #A83232;
+  --sb-star: #E3A33B;
+  --sb-star-empty: #DCDDE1;
+  --sb-skeleton: #EEF0F3;
+
+  /* glass, level B (light) */
+  --sb-glass-bg: rgba(248, 249, 252, 0.78);
+  --sb-glass-bg-opaque: rgba(248, 249, 252, 0.93); /* over dark or busy pages */
+  --sb-glass-blur: blur(24px) saturate(145%);
+  --sb-glass-border: rgba(255, 255, 255, 0.68);
+  --sb-glass-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.75);
+  --sb-glass-shadow: 0 8px 28px rgba(20, 30, 50, 0.10);
+
+  /* glass, level C (active segment, primary transient layer) */
+  --sb-glass-c-bg: rgba(255, 255, 255, 0.94);
+  --sb-glass-c-border: rgba(255, 255, 255, 0.9);
+  --sb-glass-c-shadow: 0 1px 3px rgba(20, 30, 50, 0.12);
+  --sb-segment-track: rgba(118, 118, 128, 0.12);
+
+  /* spacing */
+  --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px;
+  --space-5: 20px; --space-6: 24px; --space-8: 32px; --space-10: 40px;
+
+  /* radius */
+  --radius-sm: 8px; --radius-control: 10px; --radius-region: 12px; --radius-shell: 16px;
+
+  /* type */
+  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", "Assistant", sans-serif;
+
+  /* motion */
+  --dur-hover: 150ms; --dur-press: 120ms; --dur-panel: 220ms;
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  :host, :root { --sb-glass-bg: rgba(248, 249, 252, 0.98); --sb-glass-blur: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  :host, :root { --dur-hover: 0ms; --dur-press: 0ms; --dur-panel: 0ms; }
+}

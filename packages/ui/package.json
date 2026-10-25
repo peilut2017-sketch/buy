@@ -1,0 +1,15 @@
+{
+  "name": "@smartbuy/ui",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./tokens.css": "./src/tokens.css",
+    "./base.css": "./src/base.css"
+  },
+  "dependencies": { "@smartbuy/core": "workspace:*", "preact": "^10.29.8" },
+  "scripts": { "typecheck": "tsc -p tsconfig.json" }
+}

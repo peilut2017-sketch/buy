@@ -1,0 +1,12 @@
+{
+  "extends": "../../../tsconfig.base.json",
+  "include": [
+    "src",
+    "../../../supabase/functions/_shared"
+  ],
+  "compilerOptions": {
+    "types": [
+      "node"
+    ]
+  }
+}
