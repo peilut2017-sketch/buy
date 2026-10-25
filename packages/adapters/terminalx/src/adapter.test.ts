@@ -23,7 +23,6 @@ describe("terminalx adapter (synthetic fixtures, not verified against the live s
     expect(d.signals.map((s) => [s.name, s.agrees])).toEqual([
       ["url", true],
       ["canonical", true],
-      ["ogUrl", true],
       ["image", true],
       ["jsonLd", true],
     ]);

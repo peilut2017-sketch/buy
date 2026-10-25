@@ -150,7 +150,7 @@ export interface SiteAdapter {
   /** Runs in the background worker with the user's cookies, after consent, at most daily. */
   fetchOrders?(cfg: AdapterConfig): Promise<Order[]>;
   /** Runs in the Email Worker after DKIM passes. */
-  parseConfirmationEmail?(raw: { from: string; subject: string; text: string; html: string | null }): Order | null;
+  parseConfirmationEmail?(raw: { from: string; subject: string; text: string; html: string | null; /** The Date header, as sent. */ date?: string | null }): Order | null;
 }
 
 export type SiteStatus = "active" | "beta" | "paused";

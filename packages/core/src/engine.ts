@@ -95,16 +95,31 @@ export function detectWithConfig(siteId: string, doc: Document, url: URL, cfg: A
   });
 }
 
+/** "צבע  :" and "מידה:" name a group; the colon and spacing are layout. */
+function cleanGroupName(raw: string | null | undefined): string {
+  return (raw ?? "").replace(/\s+/g, " ").replace(/\s*:\s*$/, "").trim();
+}
+
+/**
+ * The value of one option: an explicit data-value, else its text, else its accessible name.
+ * Swatches have no text, only a label such as "ורוד עתיק : צבע", where the group name is a suffix that is not part of the value.
+ */
+function optionValue(el: Element, groupName: string): string {
+  const raw = el.getAttribute("data-value") ?? (el.textContent?.trim() || el.getAttribute("aria-label") || el.getAttribute("title") || "");
+  const suffix = new RegExp(`\\s*:\\s*${groupName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\s*$`);
+  return raw.replace(/\s+/g, " ").replace(suffix, "").trim();
+}
+
 export function readVariantOptionsWithConfig(doc: Document, cfg: AdapterConfig): VariantOption[] {
   const rules = cfg.variants;
   if (!rules) return [];
   const groups: VariantOption[] = [];
   for (const group of Array.from(doc.querySelectorAll(rules.groups))) {
-    const name = group.querySelector(rules.label)?.textContent?.trim();
+    const name = cleanGroupName(group.querySelector(rules.label)?.textContent);
     if (!name) continue;
     const values = Array.from(group.querySelectorAll(rules.option))
       .map((el) => ({
-        value: (el.getAttribute("data-value") ?? el.textContent ?? "").trim(),
+        value: optionValue(el, name),
         selected: el.matches(rules.selected),
         available: rules.unavailable ? !el.matches(rules.unavailable) : true,
       }))
@@ -160,12 +175,15 @@ export function readPriceStockWithConfig(doc: Document, cfg: AdapterConfig): Pri
   const product = ld ? jsonLdProduct(doc, ld.type) : null;
   if (product) {
     const offers = product.offers;
-    const offer = (Array.isArray(offers) ? offers[0] : offers) as Record<string, unknown> | undefined;
-    if (offer && typeof offer === "object") {
+    const list = (Array.isArray(offers) ? offers : [offers]).filter((o): o is Record<string, unknown> => typeof o === "object" && o !== null);
+    const offer = list[0];
+    if (offer) {
       const p = offer.price ?? offer.lowPrice;
       price = typeof p === "number" ? p : parsePriceText(typeof p === "string" ? p : null);
       if (typeof offer.priceCurrency === "string") currency = offer.priceCurrency;
-      inStock = availabilityToStock(offer.availability);
+      // One offer per size: the product is in stock when any size is, and out of stock only when every size is known to be.
+      const stocks = list.map((o) => availabilityToStock(o.availability));
+      inStock = stocks.some((s) => s === true) ? true : stocks.length > 0 && stocks.every((s) => s === false) ? false : null;
     }
   }
   if (cfg.price) {

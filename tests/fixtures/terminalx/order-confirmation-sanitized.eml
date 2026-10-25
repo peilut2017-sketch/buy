@@ -1,0 +1,1136 @@
+Delivered-To: SCRUBBED_EMAIL
+Received: by 2002:a05:7000:219e:b0:8b1:be59:c152 with SMTP id s30csp4504864mae;
+        Sun, 18 Oct 2026 00:48:24 -0700 (PDT)
+X-Received: by 2002:ad4:5d67:0:b0:915:3066:2035 with SMTP id 6a1803df08f44-91bdec98317mr85877076d6.7.1792309704824;
+        Sun, 18 Oct 2026 00:48:24 -0700 (PDT)
+ARC-Seal: i=1; a=rsa-sha256; t=1792309704; cv=none;
+        d=google.com; s=arc-20260327;
+        b=i8E3BgI6IS7M1l0Va3YOXgzEf8fyWiP7Tu/ctg8qoqKmPgpMw6LLVGR7Ipg0+DUYzO
+         FfkTmfRNICdzUGhG7lVLfFllAUt+251Z6cA5eUEhblxf7hvVnBVztRN5sn9d44IUh3gJ
+         zJDIyprYpW+ROjwOE/VifZLGrMzUZmKU1/THZswyS0kXcpWLAftFbe8PvIGKWZAcxoYY
+         cUobf1X5F4KUiE7MLs28lcrMFfKaMLtpCfl78cSFyMbvcTckhivYb+ikeJpdpCJe8VWL
+         DbEyk6jgf0YpouchvTKY53TADBHeXqAFRLP6D3bNnM+A/dndFWyD5/ASXUkI86PJrcEv
+         JEag==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20260327;
+        h=to:message-id:from:content-disposition:content-transfer-encoding
+         :mime-version:date:subject:dkim-signature:dkim-signature;
+        bh=bog1jrM8024ODwWU9WuF22Y15jmdtx1Oi0P+ixzoJdw=;
+        fh=B8g+JcFG/gV5s2vIluD1KNeu/6cIrQ5FgNPNUer28Bk=;
+        b=hM1NJpylBPjX9yqEMwUxOcbmumJBsLsbtFZeJurXMkuO9mPo/k5/RJft26m9yVibNq
+         c0P/vqGGlXoRIsQaK66jRnJU31B76Yc7XuMN5ytqoGlhBVy8lCvPCwW1PQpj+HjQogsp
+         HBflrnb273ke+RX5jXcLhl9/cGeZr8wfNJfiQIckgY31H8/esy6HyWqPRjiOBnsoFO/i
+         +wvOlwhkqPZ+yhJSeIOsA1uh2uKxCAn+DqjIdnSTQpAPXuGWw3hfsAlI3yu8fEdXPMH6
+         5C0KHQj93H8AGA6P7yrpRR/H/czyLhWPksi2dKSf6rRSJRRvdiW4NKtTL2OJloUDbDfz
+         WQww==;
+        dara=google.com
+ARC-Authentication-Results: i=1; mx.google.com;
+       dkim=pass header.i=@terminalx.com header.s=m1 header.b=rfFS3N8A;
+       dkim=pass header.i=@sendgrid.info header.s=smtpapi header.b=coecn0+J;
+       spf=pass (google.com: domain of bounces+SCRUBBED@em7098.terminalx.com designates 167.89.109.98 as permitted sender) smtp.mailfrom="bounces+SCRUBBED@em7098.terminalx.com";
+       dmarc=pass (p=NONE sp=NONE dis=NONE) header.from=terminalx.com
+Return-Path: <bounces+SCRUBBED@em7098.terminalx.com>
+Received: from xtrwsdsn.outbound-mail.sendgrid.net (xtrwsdsn.outbound-mail.sendgrid.net. [167.89.109.98])
+        by mx.google.com with ESMTPS id 6a1803df08f44-91bca4a737esi81962286d6.230.2026.10.18.00.48.24
+        for <SCRUBBED_EMAIL>
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Sun, 18 Oct 2026 00:48:24 -0700 (PDT)
+Received-SPF: pass (google.com: domain of bounces+SCRUBBED@em7098.terminalx.com designates 167.89.109.98 as permitted sender) client-ip=167.89.109.98;
+Authentication-Results: mx.google.com;
+       dkim=pass header.i=@terminalx.com header.s=m1 header.b=rfFS3N8A;
+       dkim=pass header.i=@sendgrid.info header.s=smtpapi header.b=coecn0+J;
+       spf=pass (google.com: domain of bounces+SCRUBBED@em7098.terminalx.com designates 167.89.109.98 as permitted sender) smtp.mailfrom="bounces+SCRUBBED@em7098.terminalx.com";
+       dmarc=pass (p=NONE sp=NONE dis=NONE) header.from=terminalx.com
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=terminalx.com;
+	h=subject:date:mime-version:content-type:content-transfer-encoding:from:
+	to:cc:content-type:date:feedback-id:from:subject:to;
+	s=m1; t=1792309704;
+	bh=bog1jrM8024ODwWU9WuF22Y15jmdtx1Oi0P+ixzoJdw=;
+	b=rfFS3N8AoS84fAODqX66oOYNYyZj/8TtFjFRZSniNAk4A2yBZ1aChPGW8TO/cIMsuTE2
+	RBISkWORHpQ5pgVuxtBVGu7azXBxLfjbkyip3bC9BPbvHNh5nmLhKenvSc/ppXiJ7o4SXJ
+	JtLczDrRC+Tny7V/KjnkOrZZM0M61ySmo=
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=sendgrid.info;
+	h=subject:date:mime-version:content-type:content-transfer-encoding:from:
+	to:cc:content-type:date:feedback-id:from:subject:to;
+	s=smtpapi; t=1792309704;
+	bh=bog1jrM8024ODwWU9WuF22Y15jmdtx1Oi0P+ixzoJdw=;
+	b=coecn0+J01pQDopMowFHPlxxSB36gYhWv/6tC1ldVRDyD8DpliLn/7KDL6++WmbCFEyX
+	El+91mQxHtUoszRoTNkF7/0tDSyrhircrTvFsoAAzeas6vN/9Gf1VhUVTMf8Foso+Fmu8D
+	ZAIs6hu+tY0IS1Oa7buvUl6GHNRh7MmCs=
+Received: by recvd-canary-56cf59876b-84k2m with SMTP id recvd-canary-56cf59876b-84k2m-1-6AD479C8-5
+	2026-10-18 07:48:24.10945341 +0000 UTC m=+1608493.089217490
+Received: from magento247-terminalx-web-slave12.localdomain (unknown)
+	by geopod-ismtpd-9 (SG) with ESMTP id MyShdThfQNSgG3VeSca_dQ
+	for <SCRUBBED_EMAIL>; Sun, 18 Oct 2026 07:48:24.012 +0000 (UTC)
+Received: by magento247-terminalx-web-slave12.localdomain (Postfix, from userid 1004)
+	id B4C3D623CD; Sun, 18 Oct 2026 10:48:23 +0300 (IDT)
+Subject: =?UTF-8?B?16LXk9eb15XXnyDXnteU15jXqNee15nXoNecIOKciA==?=
+ =?UTF-8?B?INeU15bXnteg16rXmiDXlNeq16fXkdec15Q=?=
+Date: Sun, 18 Oct 2026 07:48:24 +0000 (UTC)
+MIME-Version: 1.0
+Content-Type: text/html; charset=utf-8
+Content-Transfer-Encoding: quoted-printable
+Content-Disposition: inline
+From: TERMINAL X <support@terminalx.com>
+Message-Id: <20261018074823.B4C3D623CD@magento247-terminalx-web-slave12.localdomain>
+X-SG-EID: SCRUBBED_TOKEN 
+ =?us-ascii?Q?u001=2ElY39md6UdgszAYFsH2aUaW+mT4eNjGsGHWqHgUyK=2FX5gsUtNV+w6Vppyr?=
+ =?us-ascii?Q?wua+DIy9BUqpghpj7vNfny8p=2FCPcABPxW0MRknf?=
+ =?us-ascii?Q?hsLa33rMXtq5OR5D9EK3qHOVPQrEzwTnHFDtFu3?=
+ =?us-ascii?Q?AsLWnRqMl9MEHCHINHjhhQKIOaWmHwNNuFLxqh=2F?=
+ =?us-ascii?Q?Fgb=2FEZvAThx7FZO76TSpJxsunpsnqC75H+UcNqy?=
+ =?us-ascii?Q?wmYyo2=2F0qKzWf5AW2=2Fi38Mq5ClkdYrb88gYb356?=
+ =?us-ascii?Q?yQs2?=
+To: SCRUBBED_NAME <SCRUBBED_EMAIL>
+X-Entity-ID: SCRUBBED_TOKEN
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org=
+/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns=3D"http://www.w3.org/1999/xhtml">
+<head>
+    <meta http-equiv=3D"Content-Type" content=3D"text/html; charset=3Dutf-8=
+" />
+    <meta name=3D"viewport" content=3D"initial-scale=3D1.0, width=3Ddevice-=
+width" />
+    <meta http-equiv=3D"X-UA-Compatible" content=3D"IE=3Dedge" />
+    <style type=3D"text/css">
+       =20
+        html,
+        body {
+            margin: 0 auto !important;
+            padding: 0 !important;
+            height: 100% !important;
+            width: 100% !important;
+        }
+
+        * {
+            -ms-text-size-adjust: 100%;
+            -webkit-text-size-adjust: 100%;
+
+        }
+       =20
+        a{
+            color: inherit;
+        }
+
+        div[style*=3D"margin: 16px 0"] {
+            margin:0 !important;
+        }
+
+        table,
+        td {
+            mso-table-lspace: 0pt !important;
+            mso-table-rspace: 0pt !important;
+        }
+
+        table {
+            border-spacing: 0 !important;
+            border-collapse: collapse !important;
+            table-layout: fixed !important;
+            margin: 0 auto !important;
+        }
+        table table table {
+            table-layout: auto;
+        }
+
+        img {
+            -ms-interpolation-mode:bicubic;
+        }
+
+        *[x-apple-data-detectors],
+        .x-gmail-data-detectors,
+        .x-gmail-data-detectors *,
+        .aBn {
+            border-bottom: 0 !important;
+            cursor: default !important;
+            color: inherit !important;
+            text-decoration: none !important;
+            font-size: inherit !important;
+            font-family: inherit !important;
+            font-weight: inherit !important;
+            line-height: inherit !important;
+        }
+
+        .a6S {
+            display: none !important;
+            opacity: 0.01 !important;
+        }
+
+        img.g-img + div {
+            display:none !important;
+           }
+
+        .button-link {
+            text-decoration: none !important;
+        }
+
+
+        @media only screen and (min-device-width: 375px) and (max-device-wi=
+dth: 413px) {
+            .email-container {
+                min-width: 375px !important;
+            }
+        }
+      =20
+        .button-td,
+        .button-a {
+            transition: all 100ms ease-in;
+        }
+     =20
+        @media screen and (max-width: 480px) {
+
+
+            .fluid {
+                width: 100% !important;
+                max-width: 100% !important;
+                height: auto !important;
+                margin-left: auto !important;
+                margin-right: auto !important;
+            }
+
+            .stack-column,
+            .stack-column-center {
+                display: block !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                direction: ltr !important;
+            }
+
+            .stack-column-center {
+                text-align: center !important;
+            }
+
+
+            .center-on-narrow {
+                text-align: center !important;
+                display: block !important;
+                margin-left: auto !important;
+                margin-right: auto !important;
+                float: none !important;
+            }
+
+            table.center-on-narrow {
+                display: inline-block !important;
+            }
+
+            .email-container p {
+                font-size: 17px !important;
+                line-height: 22px !important;
+            }
+        }
+
+    </style>
+    <!-- What it does: Makes background images in 72ppi Outlook render at c=
+orrect size. -->
+    <!--[if gte mso 9]>
+    <xml>
+        <o:OfficeDocumentSettings>
+            <o:AllowPNG/>
+            <o:PixelsPerInch>96</o:PixelsPerInch>
+        </o:OfficeDocumentSettings>
+    </xml>
+    <![endif]-->
+</head>
+
+<body width=3D"100%" bgcolor=3D"#ffffff" dir=3D"rtl" style=3D"margin: 0; ms=
+o-line-height-rule: exactly; font-size:18px; font-family: Helvetica, Arial,=
+ Sans-Serif;">
+<center style=3D"width: 100%; background: #ffffff; text-align: right;">
+
+<div style=3D"max-width: 680px; margin: auto;">=20
+<!--[if mso]>
+<table role=3D"presentation" cellspacing=3D"0" cellpadding=3D"0" border=3D"=
+0" width=3D"680" align=3D"center">
+<tr>
+<td>
+<![endif]-->
+
+<!-- Email Header : BEGIN -->
+<table role=3D"presentation" cellspacing=3D"0" cellpadding=3D"0" border=3D"=
+0" align=3D"center" style=3D"max-width: 680px;">
+    <tr>
+        <td bgcolor=3D"#ffffff" style=3D"padding: 20px; text-align: right">
+            <a href=3D"https://u8795420.ct.sendgrid.net/ls/click?upn=3DSCRU=
+BBED" title=3D"TERMINAL X" style=3D"display: block;">   =20
+                <img src=3D"https://www.terminalx.com/static/version1787008=
+688/frontend/Idus/terminalx/he_IL/Magento_Email/logo_email.png" width=3D"20=
+0" height=3D"50" alt=3D"TERMINAL X" border=3D"0" style=3D"height: auto; fon=
+t-family: Helvetica, Arial, Sans-Serif; color: #555555;">
+            </a>
+        </td>
+    </tr>
+</table>
+<!-- Email Header : END -->
+<table role=3D"presentation" cellspacing=3D"0" cellpadding=3D"0" border=3D"=
+0" align=3D"center" width=3D"100%"
+    style=3D"max-width: 680px;">
+    <tr>
+        <td bgcolor=3D"#ffffff" style=3D"padding: 20px;">
+            <table role=3D"presentation" cellspacing=3D"0" cellpadding=3D"0=
+" border=3D"0" width=3D"100%">
+                <tr>
+                    <td style=3D"text-align: right;">
+                        <h1
+                            style=3D"margin: 0; font-family: Helvetica, Ari=
+al, Sans-Serif; color: #000000; line-height:28px; font-size:18px; font-weig=
+ht: normal;">
+                            =D7=94=D7=99=D7=99 ,
+                        </h1>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td
+                        style=3D"font-family: Helvetica, Arial, Sans-Serif;=
+ color: #888888; text-align: right; line-height:28px; padding-top:20px;">
+
+                       =20
+                        =D7=A7=D7=99=D7=91=D7=9C=D7=A0=D7=95 =D7=90=D7=AA =
+=D7=94=D7=94=D7=96=D7=9E=D7=A0=D7=94 =D7=A9=D7=9C=D7=9A.<br>
+                        =D7=90=D7=A0=D7=97=D7=A0=D7=95 =D7=9E=D7=9B=D7=99=
+=D7=A0=D7=99=D7=9D =D7=90=D7=AA =D7=94=D7=97=D7=91=D7=99=D7=9C=D7=94 =D7=9C=
+=D7=9E=D7=A9=D7=9C=D7=95=D7=97 =D7=95=D7=A8=D7=A7 =D7=9C=D7=90=D7=97=D7=A8 =
+=D7=9E=D7=9B=D7=9F =D7=9E=D7=97=D7=99=D7=99=D7=91=D7=99=D7=9D =D7=90=D7=AA =
+=D7=9B=D7=A8=D7=98=D7=99=D7=A1 =D7=94=D7=90=D7=A9=D7=A8=D7=90=D7=99.<br>
+                        =D7=97=D7=91=D7=A8=D7=99 =D7=9E=D7=95=D7=A2=D7=93=
+=D7=95=D7=9F DREAM CARD, =D7=A2=D7=93=D7=9B=D7=95=D7=9F =D7=94=D7=A0=D7=A7=
+=D7=95=D7=93=D7=95=D7=AA =D7=9E=D7=AA=D7=91=D7=A6=D7=A2 =D7=9C=D7=90=D7=97=
+=D7=A8 =D7=94=D7=97=D7=99=D7=95=D7=91.<br><br>
+                        =D7=94=D7=95=D7=93=D7=A2=D7=AA SMS =D7=AA=D7=A9=D7=
+=9C=D7=97, =D7=9B=D7=90=D7=A9=D7=A8 =D7=94=D7=97=D7=91=D7=99=D7=9C=D7=94 =
+=D7=AA=D7=A6=D7=90 =D7=90=D7=9C=D7=99=D7=9A =D7=9E=D7=97=D7=91=D7=A8=D7=AA =
+=D7=94=D7=9E=D7=A9=D7=9C=D7=95=D7=97=D7=99=D7=9D
+                       =20
+
+                    </td>
+                </tr>
+
+                <tr>
+                    <td
+                        style=3D"font-family: Helvetica, Arial, Sans-Serif;=
+ color: #888888; text-align: right; line-height:28px; padding-top:20px;">
+                        =D7=A0=D7=99=D7=AA=D7=9F =D7=9C=D7=A2=D7=A7=D7=95=
+=D7=91 =D7=90=D7=97=D7=A8=D7=99 =D7=94=D7=9E=D7=A9=D7=9C=D7=95=D7=97 =D7=91=
+=D7=9C=D7=99=D7=A0=D7=A7 =D7=94=D7=91=D7=90 <a href=3D"https://u8795420.ct.=
+sendgrid.net/ls/click?upn=3DSCRUBBED" style=3D"color:#000000">=D7=A1=D7=98=
+=D7=90=D7=98=D7=95=D7=A1 =D7=94=D7=9E=D7=A9=D7=9C=D7=95=D7=97</a>
+
+                        <!-- =D7=A0=D7=99=D7=AA=D7=9F =D7=9C=D7=A2=D7=A7=D7=
+=95=D7=91 =D7=90=D7=97=D7=A8=D7=99 =D7=94=D7=9E=D7=A9=D7=9C=D7=95=D7=97 =D7=
+=91=D7=9C=D7=99=D7=A0=D7=A7 =D7=94=D7=91=D7=90 - <a href=3D"https://u879542=
+0.ct.sendgrid.net/ls/click?upn=3DSCRUBBED" style=3D"color:#000000">=D7=A1=
+=D7=98=D7=90=D7=98=D7=95=D7=A1 =D7=94=D7=9E=D7=A9=D7=9C=D7=95=D7=97</a>.-->
+                    </td>
+                </tr>
+
+                <tr>
+                    <td
+                        style=3D"font-family: Helvetica, Arial, Sans-Serif;=
+ color: #888888; text-align: right; line-height:28px; padding:20px 0 0 20px=
+;">
+                        <div>
+    <span>&#8226;</span>
+
+    =D7=9C=D7=94=D7=93=D7=A4=D7=A1=D7=AA =D7=AA=D7=A2=D7=95=D7=93=D7=AA =D7=
+=94=D7=97=D7=96=D7=A8=D7=94  <a href=3D"https://u8795420.ct.sendgrid.net/ls=
+/click?upn=3DSCRUBBED" style=3D"color:#000000">=D7=A0=D7=90 =D7=9C=D7=9C=D7=
+=97=D7=95=D7=A5 =D7=9B=D7=90=D7=9F</a></div>
+
+                    </td>
+                </tr>
+
+                <tr>
+                    <td
+                        style=3D"font-family: Helvetica, Arial, Sans-Serif;=
+ color: #888888; text-align: right; line-height:28px; padding:20px 0;">
+                        <div>
+                            <span>&#8226;</span>
+                            =D7=9C=D7=A9=D7=90=D7=9C=D7=95=D7=AA =D7=91=D7=
+=A0=D7=95=D7=A9=D7=90 =D7=94=D7=94=D7=96=D7=9E=D7=A0=D7=94 =D7=A9=D7=9C=D7=
+=9A =D7=A0=D7=99=D7=AA=D7=9F =D7=9C=D7=A4=D7=A0=D7=95=D7=AA =D7=91=D7=9E=D7=
+=99=D7=99=D7=9C: <a href=3D"mailto:support@terminalx.com"
+                                style=3D"color:#000000">support@terminalx.c=
+om</a>.<br>
+
+                            =D7=90=D7=95 =D7=91=D7=A6&#039;=D7=98 =D7=94=D7=
+=90=D7=AA=D7=A8
+                        </div>
+                    </td>
+                </tr>
+
+
+
+
+            </table>
+
+            <table role=3D"presentation" cellspacing=3D"0" cellpadding=3D"0=
+" border=3D"0" width=3D"100%">
+                <tr>
+                    <td bgcolor=3D"#ffffff" style=3D"text-align: center;">
+                        <p style=3D"margin:20px 0;">
+
+                            <strong>
+                                =D7=9E=D7=A1=D7=A4=D7=A8 =D7=94=D7=96=D7=9E=
+=D7=A0=D7=94: <span class=3D"no-link">#SCRUBBED_ORDER_ID</span>
+                            </strong>
+                        </p>
+                    </td>
+                </tr>
+            </table>
+
+                    <table style=3D"table-layout: auto!important" role=3D"p=
+resentation" cellspacing=3D"0" cellpadding=3D"0" border=3D"0" width=3D"100%=
+">
+        <thead>
+            <tr style=3D"border-top:1px solid #cccccc;border-bottom:1px sol=
+id #cccccc;">
+                <th style=3D"font-family: Helvetica, Arial, Sans-Serif; pad=
+ding:15px 0 15px 15px;text-align:right; vertical-align: top;">
+                    =D7=AA=D7=9E=D7=95=D7=A0=D7=AA =D7=9E=D7=95=D7=A6=D7=A8=
+                </th>
+                <th style=3D"font-family: Helvetica, Arial, Sans-Serif; pad=
+ding:15px 0 15px 15px;text-align:right; vertical-align: top;">
+                    =D7=AA=D7=99=D7=90=D7=95=D7=A8 =D7=9E=D7=95=D7=A6=D7=A8=
+                </th>
+                <th style=3D"font-family: Helvetica, Arial, Sans-Serif; pad=
+ding:15px 0 15px 15px;text-align:right; vertical-align: top;">
+                    =D7=9B=D7=9E=D7=95=D7=AA                </th>
+                <th style=3D"font-family: Helvetica, Arial, Sans-Serif; pad=
+ding:15px 0 15px 15px;text-align:right; vertical-align: top;">
+                    =D7=A7=D7=95=D7=93 =D7=9E=D7=95=D7=A6=D7=A8            =
+    </th>
+                <th style=3D"font-family: Helvetica, Arial, Sans-Serif; pad=
+ding:15px 0 15px 15px;text-align:right; vertical-align: top;">
+                    Price                </th>
+            </tr>
+        </thead>
+                                            <tbody>
+                <tr>
+    <td style=3D"font-family: Helvetica, Arial, Sans-Serif; padding:15px 0 =
+15px 15px;text-align:right; vertical-align: top;">
+        <img src=3D"https://media.terminalx.com/pub/media/resized/100_133/c=
+atalog/product/k/1/k126100017-11791442206.jpg">
+    </td>
+    <td style=3D"font-family: Helvetica, Arial, Sans-Serif; padding:15px 0 =
+15px 15px;text-align:right; vertical-align: top;">
+        <p>MANGO</p>
+        <p>=D7=A9=D7=9E=D7=9C=D7=AA =D7=9E=D7=99=D7=93=D7=99 =D7=91=D7=A9=
+=D7=99=D7=9C=D7=95=D7=91 =D7=A7=D7=A4=D7=9C=D7=99=D7=9D =D7=95=D7=97=D7=92=
+=D7=95=D7=A8=D7=94</p>
+                    <dl class=3D"item-options">
+                                            <dt><span><strong><em>=D7=A6=D7=
+=91=D7=A2</em></strong></span> : <span>=D7=91=D7=95=D7=A8=D7=93=D7=95</span=
+></dt>
+                                                            <dt><span><stro=
+ng><em>=D7=9E=D7=99=D7=93=D7=94</em></strong></span> : <span>M</span></dt>
+                                            <dt><span><strong><em>=D7=90=D7=
+=A8=D7=A5 =D7=99=D7=99=D7=A6=D7=95=D7=A8</em></strong></span> : <span>=D7=
+=A4=D7=99=D7=9C=D7=99=D7=A4=D7=99=D7=A0=D7=99=D7=9D</span></dt>
+            </dl>
+               =20
+    </td>
+   =20
+    <td style=3D"font-family: Helvetica, Arial, Sans-Serif; padding:15px 0 =
+15px 15px;text-align:right; vertical-align: top;">1    </td>
+   =20
+    <td style=3D"font-family: Helvetica, Arial, Sans-Serif; padding:15px 0 =
+15px 15px;text-align:right; vertical-align: top;">
+        K12610001704    </td>
+   =20
+    <td style=3D"font-family: Helvetica, Arial, Sans-Serif; padding:15px 0 =
+15px 15px;text-align:right; vertical-align: top;">
+       =20
+        <span class=3D"price">384.93=C2=A0=E2=80=8F=E2=82=AA</span>
+   =20
+
+    </td>
+</tr>
+
+            </tbody>
+                                                        <tbody>
+                <tr>
+    <td style=3D"font-family: Helvetica, Arial, Sans-Serif; padding:15px 0 =
+15px 15px;text-align:right; vertical-align: top;">
+        <img src=3D"https://media.terminalx.com/pub/media/resized/100_133/c=
+atalog/product/r/8/r868090001-11783499104.jpg">
+    </td>
+    <td style=3D"font-family: Helvetica, Arial, Sans-Serif; padding:15px 0 =
+15px 15px;text-align:right; vertical-align: top;">
+        <p>TED BAKER</p>
+        <p>WEBBING SUEDE CAMERA =D7=AA=D7=99=D7=A7=D7=99 =D7=A6=D7=93</p>
+                    <dl class=3D"item-options">
+                                            <dt><span><strong><em>=D7=A6=D7=
+=91=D7=A2</em></strong></span> : <span>=D7=A7=D7=95=D7=A0=D7=99=D7=90=D7=A7=
+</span></dt>
+                                                            <dt><span><stro=
+ng><em>=D7=9E=D7=99=D7=93=D7=94</em></strong></span> : <span>OS</span></dt>
+                                            <dt><span><strong><em>=D7=90=D7=
+=A8=D7=A5 =D7=99=D7=99=D7=A6=D7=95=D7=A8</em></strong></span> : <span>=D7=
+=A1=D7=99=D7=9F</span></dt>
+            </dl>
+               =20
+    </td>
+   =20
+    <td style=3D"font-family: Helvetica, Arial, Sans-Serif; padding:15px 0 =
+15px 15px;text-align:right; vertical-align: top;">1    </td>
+   =20
+    <td style=3D"font-family: Helvetica, Arial, Sans-Serif; padding:15px 0 =
+15px 15px;text-align:right; vertical-align: top;">
+        R86809000115    </td>
+   =20
+    <td style=3D"font-family: Helvetica, Arial, Sans-Serif; padding:15px 0 =
+15px 15px;text-align:right; vertical-align: top;">
+       =20
+        <span class=3D"price">468.93=C2=A0=E2=80=8F=E2=82=AA</span>
+   =20
+
+    </td>
+</tr>
+
+            </tbody>
+                                                        <tbody>
+                <tr>
+    <td style=3D"font-family: Helvetica, Arial, Sans-Serif; padding:15px 0 =
+15px 15px;text-align:right; vertical-align: top;">
+        <img src=3D"https://media.terminalx.com/pub/media/resized/100_133/c=
+atalog/product/k/1/k111020001-11790661904.jpg">
+    </td>
+    <td style=3D"font-family: Helvetica, Arial, Sans-Serif; padding:15px 0 =
+15px 15px;text-align:right; vertical-align: top;">
+        <p>TOMMY HILFIGER</p>
+        <p>=D7=97=D7=95=D7=9C=D7=A6=D7=94 TJW / =D7=A0=D7=A9=D7=99=D7=9D</p=
+>
+                    <dl class=3D"item-options">
+                                            <dt><span><strong><em>=D7=A6=D7=
+=91=D7=A2</em></strong></span> : <span>=D7=9B=D7=97=D7=95=D7=9C =D7=A0=D7=
+=99=D7=99=D7=91=D7=99</span></dt>
+                                                            <dt><span><stro=
+ng><em>=D7=9E=D7=99=D7=93=D7=94</em></strong></span> : <span>S</span></dt>
+                                            <dt><span><strong><em>=D7=90=D7=
+=A8=D7=A5 =D7=99=D7=99=D7=A6=D7=95=D7=A8</em></strong></span> : <span>=D7=
+=91=D7=A0=D7=92=D7=9C=D7=93=D7=A9</span></dt>
+            </dl>
+               =20
+    </td>
+   =20
+    <td style=3D"font-family: Helvetica, Arial, Sans-Serif; padding:15px 0 =
+15px 15px;text-align:right; vertical-align: top;">1    </td>
+   =20
+    <td style=3D"font-family: Helvetica, Arial, Sans-Serif; padding:15px 0 =
+15px 15px;text-align:right; vertical-align: top;">
+        K11102000103    </td>
+   =20
+    <td style=3D"font-family: Helvetica, Arial, Sans-Serif; padding:15px 0 =
+15px 15px;text-align:right; vertical-align: top;">
+       =20
+        <span class=3D"price">160.30=C2=A0=E2=80=8F=E2=82=AA</span>
+   =20
+
+    </td>
+</tr>
+
+            </tbody>
+                            <tfoot style=3D"font-family: Helvetica, Arial, =
+Sans-Serif; padding:15px 0 15px 15px;text-align:right; vertical-align: top;=
+">
+                                <tr class=3D"subtotal">
+        <th colspan=3D"2" scope=3D"row">
+                            =D7=A1=D7=9B=D7=95=D7=9D =D7=91=D7=99=D7=A0=D7=
+=99=D7=99=D7=9D                    </th>
+        <td  data-th=3D"&#x05E1;&#x05DB;&#x05D5;&#x05DD;&#x20;&#x05D1;&#x05=
+D9;&#x05E0;&#x05D9;&#x05D9;&#x05DD;">
+                            <span class=3D"price">1,014.16=C2=A0=E2=80=8F=
+=E2=82=AA</span>                    </td>
+    </tr>
+            <tr class=3D"points">
+        <th colspan=3D"2" scope=3D"row">
+                            =D7=9E=D7=99=D7=9E=D7=95=D7=A9 =D7=A0=D7=A7=D7=
+=95=D7=93=D7=95=D7=AA =D7=9E=D7=95=D7=A2=D7=93=D7=95=D7=9F (105)           =
+         </th>
+        <td  data-th=3D"&#x05DE;&#x05D9;&#x05DE;&#x05D5;&#x05E9;&#x20;&#x05=
+E0;&#x05E7;&#x05D5;&#x05D3;&#x05D5;&#x05EA;&#x20;&#x05DE;&#x05D5;&#x05E2;&#=
+x05D3;&#x05D5;&#x05DF;&#x20;&#x28;105&#x29;">
+                            <span class=3D"price">105.00=C2=A0=E2=80=8F=E2=
+=82=AA</span>                    </td>
+    </tr>
+            <tr class=3D"add_points">
+        <th colspan=3D"2" scope=3D"row">
+                            =D7=A6=D7=91=D7=99=D7=A8=D7=AA =D7=A0=D7=A7=D7=
+=95=D7=93=D7=95=D7=AA =D7=9E=D7=95=D7=A2=D7=93=D7=95=D7=9F =D7=9B- (0)     =
+               </th>
+        <td  data-th=3D"&#x05E6;&#x05D1;&#x05D9;&#x05E8;&#x05EA;&#x20;&#x05=
+E0;&#x05E7;&#x05D5;&#x05D3;&#x05D5;&#x05EA;&#x20;&#x05DE;&#x05D5;&#x05E2;&#=
+x05D3;&#x05D5;&#x05DF;&#x20;&#x05DB;-&#x20;&#x28;0&#x29;">
+                            <span class=3D"price">0.00=C2=A0=E2=80=8F=E2=82=
+=AA</span>                    </td>
+    </tr>
+            <tr class=3D"discount">
+        <th colspan=3D"2" scope=3D"row">
+                            =D7=94=D7=A0=D7=97=D7=95=D7=AA =D7=A0=D7=95=D7=
+=A1=D7=A4=D7=95=D7=AA                    </th>
+        <td  data-th=3D"&#x05D4;&#x05E0;&#x05D7;&#x05D5;&#x05EA;&#x20;&#x05=
+E0;&#x05D5;&#x05E1;&#x05E4;&#x05D5;&#x05EA;">
+                            <span class=3D"price">=E2=80=8E-300.00=C2=A0=E2=
+=80=8F=E2=82=AA</span>                    </td>
+    </tr>
+            <tr class=3D"shipping">
+        <th colspan=3D"2" scope=3D"row">
+                            =D7=9E=D7=A9=D7=9C=D7=95=D7=97 =D7=95=D7=98=D7=
+=99=D7=A4=D7=95=D7=9C                    </th>
+        <td  data-th=3D"&#x05DE;&#x05E9;&#x05DC;&#x05D5;&#x05D7;&#x20;&#x05=
+D5;&#x05D8;&#x05D9;&#x05E4;&#x05D5;&#x05DC;">
+                            <span class=3D"price">0.00=C2=A0=E2=80=8F=E2=82=
+=AA</span>                    </td>
+    </tr>
+            <tr class=3D"store_credit">
+        <th colspan=3D"2" scope=3D"row">
+                            =D7=94=D7=A7=D7=A8=D7=93=D7=99=D7=98 =D7=A9=D7=
+=9C=D7=99                    </th>
+        <td  data-th=3D"&#x05D4;&#x05E7;&#x05E8;&#x05D3;&#x05D9;&#x05D8;&#x=
+20;&#x05E9;&#x05DC;&#x05D9;">
+                            <span class=3D"price">=E2=80=8E-603.92=C2=A0=E2=
+=80=8F=E2=82=AA</span>                    </td>
+    </tr>
+            <tr class=3D"grand_total">
+        <th colspan=3D"2" scope=3D"row">
+                            <strong>=D7=94=D7=A1=D7=9B=D7=95=D7=9D =D7=94=
+=D7=9B=D7=95=D7=9C=D7=9C</strong>
+                    </th>
+        <td  data-th=3D"&#x05D4;&#x05E1;&#x05DB;&#x05D5;&#x05DD;&#x20;&#x05=
+D4;&#x05DB;&#x05D5;&#x05DC;&#x05DC;">
+                            <strong><span class=3D"price">5.24=C2=A0=E2=80=
+=8F=E2=82=AA</span></strong>
+                    </td>
+    </tr>
+            </tfoot>
+    </table>
+   =20
+
+        </td>
+    </tr>
+</table>
+
+<!-- Order Desc: BEGIN -->
+<table role=3D"presentation" cellspacing=3D"0" cellpadding=3D"0" border=3D"=
+0" align=3D"center" width=3D"100%"
+    style=3D"max-width: 680px;">
+    <tr>
+        <td bgcolor=3D"#ffffff" style=3D"padding:20px;">
+
+            <table role=3D"presentation" cellspacing=3D"0" cellpadding=3D"0=
+" border=3D"0" width=3D"100%">
+                <tr>
+                    <td bgcolor=3D"#ffffff"
+                        style=3D"display: inline-block; width: 50%; min-wid=
+th: 200px; vertical-align: top;">
+                        <h3 style=3D"font-size: 18px;margin:0;">=D7=9B=D7=
+=AA=D7=95=D7=91=D7=AA =D7=9C=D7=9E=D7=A9=D7=9C=D7=95=D7=97</h3>
+                        <p style=3D"color:#888888; line-height:28px; margin=
+: 10px 0;">
+                            SCRUBBED_NAME<br/>
+
+SCRUBBED_ADDRESS<br/>
+SCRUBBED_PHONE
+                        </p>
+                    </td>
+                    <td bgcolor=3D"#ffffff"
+                        style=3D"display: inline-block; width: 50%; min-wid=
+th: 200px; vertical-align: top;">
+                        <h3 style=3D"font-size: 18px;margin:0;">=D7=A9=D7=
+=99=D7=98=D7=AA =D7=94=D7=9E=D7=A9=D7=9C=D7=95=D7=97</h3>
+                        <p style=3D"color:#888888; line-height:28px; margin=
+: 10px 0;">
+                            =D7=96=D7=9E=D7=9F =D7=9E=D7=A9=D7=9C=D7=95=D7=
+=97 =D7=A2=D7=93 5 =D7=99=D7=9E=D7=99 =D7=A2=D7=A1=D7=A7=D7=99=D7=9D - =D7=
+=A9=D7=9C=D7=99=D7=97 =D7=A2=D7=93 =D7=94=D7=91=D7=99=D7=AA
+                        </p>
+
+                        <h3 style=3D"font-size: 18px;margin:0;">=D7=A9=D7=
+=99=D7=98=D7=AA =D7=AA=D7=A9=D7=9C=D7=95=D7=9D</h3>
+                        <p style=3D"color:#888888; line-height:28px; margin=
+: 10px 0;">
+                            =D7=9B=D7=A8=D7=98=D7=99=D7=A1 =D7=90=D7=A9=D7=
+=A8=D7=90=D7=99
+                        </p>
+                    </td>
+                </tr>
+            </table>
+
+        </td>
+    <tr>
+
+</table>
+<!-- Order Desc: : END -->
+
+<!-- LINE: BEGIN -->
+<table role=3D"presentation" cellspacing=3D"0" cellpadding=3D"0" border=3D"=
+0" align=3D"center" width=3D"100%"
+    style=3D"max-width: 680px;">
+    <tr>
+        <td bgcolor=3D"#ffffff" style=3D"padding:0 20px;">
+            <hr style=3D"margin: 0;" />
+        </td>
+    <tr>
+
+</table>
+<!-- LINE: END -->
+
+<table role=3D"presentation" cellspacing=3D"0" cellpadding=3D"0" border=3D"=
+0" align=3D"center" width=3D"100%"
+    style=3D"max-width: 680px;">
+    <tr>
+        <td style=3D"padding:20px;">
+            <table role=3D"presentation" cellspacing=3D"0" cellpadding=3D"0=
+" border=3D"0" align=3D"center" width=3D"100%">
+                <tr>
+                    <td bgcolor=3D"#ffffff" style=3D"padding:20px 0">
+                        <img src=3D"https://www.terminalx.com/static/versio=
+n1787008688/frontend/Idus/terminalx/he_IL/images/email/order.jpg" width=3D"=
+680" height=3D"" alt=3D"alt_text" border=3D"0"
+                            align=3D"center" class=3D"fluid"
+                            style=3D"width: 100%; max-width: 680px; height:=
+ auto; background: #dddddd; font-family: sans-serif; font-size: 18px; line-=
+height: 20px; color: #555555;"
+                            class=3D"g-img">
+                    </td>
+                </tr>
+
+                <tr>
+                    <td bgcolor=3D"#ffffff" style=3D"font-family: Helvetica=
+, Arial, Sans-Serif; color: #222222;">
+                        <table role=3D"presentation" cellspacing=3D"0" cell=
+padding=3D"0" border=3D"0" align=3D"center"
+                            style=3D"margin: auto;">
+                            <tr>
+                                <td style=3D"text-align: center; font-famil=
+y: Helvetica, Arial, Sans-Serif;">
+                                    TERMINAL X. =D7=94=D7=92=D7=A2=D7=AA=D7=
+=9D =D7=9C=D7=99=D7=A2=D7=93.
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <!-- <td style=3D"text-align: center; paddi=
+ng:20px 0;">
+                                    <a href=3D"https://u8795420.ct.sendgrid=
+.net/ls/click?upn=3DSCRUBBED"
+                                        style=3D"background: #fefa03; borde=
+r: 10px solid #fefa03; font-family: Helvetica, Arial, Sans-Serif; line-heig=
+ht: 1.1; text-align: center; text-decoration: none; display: block; font-we=
+ight: bold;"
+                                        class=3D"button-a">
+
+                                        <img src=3D"https://www.terminalx.c=
+om/static/version1787008688/frontend/Idus/terminalx/he_IL/images/email/shop=
+_now.png" width=3D"65" border=3D"0"
+                                            alt=3D"shop now"
+                                            style=3D"width: 100%; max-width=
+: 65px; height: auto; font-family: Helvetica, Arial, Sans-Serif; font-size:=
+ 18px; line-height: 20px; color: #555555;border:0;">
+                                    </a>
+                                </td> -->
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+
+            </table>
+        </td>
+    </tr>
+</table>
+
+<!-- LINE: BEGIN -->
+<table role=3D"presentation" cellspacing=3D"0" cellpadding=3D"0" border=3D"=
+0" align=3D"center" width=3D"100%"
+    style=3D"max-width: 680px;">
+    <tr>
+        <td bgcolor=3D"#ffffff" style=3D"padding:0 20px;">
+            <hr style=3D"margin: 0;" />
+        </td>
+    <tr>
+</table>
+<!-- LINE: END -->
+
+<!-- Footer : BEGIN -->
+
+
+<table role=3D"presentation" cellspacing=3D"0" cellpadding=3D"0" border=3D"=
+0" align=3D"left" width=3D"100%" style=3D"max-width: 680px;">
+    <tr>
+
+        <td dir=3D"ltr" bgcolor=3D"#ffffff" align=3D"left" height=3D"100%" =
+valign=3D"top" width=3D"100%" style=3D"padding: 20px 10px">
+            <!--[if mso]>
+            <table role=3D"presentation" border=3D"0" cellspacing=3D"0" cel=
+lpadding=3D"0" align=3D"center" width=3D"660">
+            <tr>
+            <td align=3D"center" valign=3D"top" width=3D"660">
+            <![endif]-->
+            <table role=3D"presentation" border=3D"0" cellpadding=3D"0" cel=
+lspacing=3D"0" align=3D"center" width=3D"100%">
+                <tr>
+                    <td align=3D"left" valign=3D"top" style=3D"font-size:0;=
+ padding: 10px 0;">
+                       =20
+                        <!--[if mso]>
+                        <table role=3D"presentation" border=3D"0" cellspaci=
+ng=3D"0" cellpadding=3D"0" align=3D"center" width=3D"660">
+                        <tr>
+                        <td align=3D"left" valign=3D"top" width=3D"330">
+                        <![endif]-->
+                        <table style=3D"display:inline-block; max-width: 70=
+%; min-width: 320px; vertical-align:top; width:100%;" role=3D"presentation"=
+ cellspacing=3D"0" cellpadding=3D"0" border=3D"0" width=3D"100%">
+                            <tr>
+                                <td dir=3D"ltr" style=3D"padding:10px;">
+                                      <a href=3D"https://u8795420.ct.sendgr=
+id.net/ls/click?upn=3DSCRUBBED" data-mce-href=3D"https://www.terminalx.com"=
+> =20
+                                        <img src=3D"https://www.terminalx.c=
+om/static/version1787008688/frontend/Idus/terminalx/he_IL/images/email/foot=
+er_img.png" alt=3D"terminalx" st-image=3D"image260x170" style=3D"max-width:=
+260px; display: block;border: 0 !important;outline: none !important;" borde=
+r=3D"0" width=3D"260" height=3D"169">
+                                      </a>
+                                </td>
+                            </tr>
+                        </table>
+                        <!--[if mso]>
+                        </td>
+                        <td align=3D"left" valign=3D"top" width=3D"330">
+                        <![endif]-->
+                        <table style=3D"display:inline-block; max-width: 30=
+%; min-width: 160px; vertical-align:top;" role=3D"presentation" cellspacing=
+=3D"0" cellpadding=3D"0" border=3D"0" width=3D"100%">
+                                <tr>
+                                    <td dir=3D"ltr" style=3D"font-family: H=
+elvetica, Arial, Sans-Serif; font-size: 18px; line-height: 20px; color: #55=
+5555; padding: 10px; text-align: left;">
+                                      =20
+                                        <table role=3D"presentation" cellsp=
+acing=3D"0" cellpadding=3D"0" border=3D"0" style=3D"float:left;">
+                                            <tr>
+                                                                           =
+                                 <td valign=3D"top" align=3D"left" class=3D=
+"em_center mce-content-body" style=3D"font-family: Helvetica, arial, sans-s=
+erif; font-size: 16px; color: rgb(102, 102, 102); line-height: 20px; positi=
+on: relative;" st-content=3D"textbox1-content" id=3D"mce_24" contenteditabl=
+e=3D"true" spellcheck=3D"false"><p style=3D"margin: 0px;" align=3D"left" da=
+ta-mce-style=3D"margin: 0px;"><strong><span style=3D"color: #222222; font-f=
+amily: Arial, sans-serif; font-size: 12pt; font-style: normal; font-variant=
+-ligatures: normal; font-variant-caps: normal; letter-spacing: normal; text=
+-align: left; text-indent: 0px; text-transform: uppercase; white-space: nor=
+mal; word-spacing: 0px; -webkit-text-stroke-width: 0px; background-color: #=
+ffffff; float: none; display: inline !important;" data-mce-style=3D"color: =
+#222222; font-family: Arial, sans-serif; font-size: 12pt; font-style: norma=
+l; font-variant-ligatures: normal; font-variant-caps: normal; letter-spacin=
+g: normal; text-align: left; text-indent: 0px; text-transform: uppercase; w=
+hite-space: normal; word-spacing: 0px; -webkit-text-stroke-width: 0px; back=
+ground-color: #ffffff; float: none; display: inline !important;">CHECK-IN N=
+OW</span></strong></p><p style=3D"margin: 0px;" align=3D"left" data-mce-sty=
+le=3D"margin: 0px;"><span style=3D"font-size: 10pt;" data-mce-style=3D"font=
+-size: 10pt;"><a style=3D"text-decoration: none;" href=3D"https://u8795420.=
+ct.sendgrid.net/ls/click?upn=3DSCRUBBED" data-mce-href=3D"https://www.termi=
+nalx.com/women?utm_source=3Dnewsletter&utm_medium=3Demail&utm_content=3Dsho=
+p-w&utm_campaign=3Dinfo_mail" data-mce-style=3D"text-decoration: none;"><sp=
+an style=3D"color: #000000; font-family: Arial, sans-serif; font-style: nor=
+mal; font-variant-ligatures: normal; font-variant-caps: normal; font-weight=
+: 400; letter-spacing: normal; text-align: left; text-indent: 0px; text-tra=
+nsform: uppercase; white-space: normal; word-spacing: 0px; -webkit-text-str=
+oke-width: 0px; background-color: #ffffff; float: none; display: inline !im=
+portant;" data-mce-style=3D"color: #000000; font-family: Arial, sans-serif;=
+ font-style: normal; font-variant-ligatures: normal; font-variant-caps: nor=
+mal; font-weight: 400; letter-spacing: normal; text-align: left; text-inden=
+t: 0px; text-transform: uppercase; white-space: normal; word-spacing: 0px; =
+-webkit-text-stroke-width: 0px; background-color: #ffffff; float: none; dis=
+play: inline !important;">SHOP WOMEN</span></a></span></p><p style=3D"margi=
+n: 0px;" align=3D"left" data-mce-style=3D"margin: 0px;"><span style=3D"font=
+-size: 10pt;" data-mce-style=3D"font-size: 10pt;"><a style=3D"text-decorati=
+on: none;" href=3D"https://u8795420.ct.sendgrid.net/ls/click?upn=3DSCRUBBED=
+" data-mce-href=3D"https://www.terminalx.com/men?utm_source=3Dnewsletter&ut=
+m_medium=3Demail&utm_content=3Dshop-m&utm_campaign=3Dinfo_mail" data-mce-st=
+yle=3D"text-decoration: none;"><span style=3D"color: #000000; font-family: =
+Arial, sans-serif; font-style: normal; font-variant-ligatures: normal; font=
+-variant-caps: normal; font-weight: 400; letter-spacing: normal; text-align=
+: left; text-indent: 0px; text-transform: uppercase; white-space: normal; w=
+ord-spacing: 0px; -webkit-text-stroke-width: 0px; background-color: #ffffff=
+; float: none; display: inline !important;" data-mce-style=3D"color: #00000=
+0; font-family: Arial, sans-serif; font-style: normal; font-variant-ligatur=
+es: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: no=
+rmal; text-align: left; text-indent: 0px; text-transform: uppercase; white-=
+space: normal; word-spacing: 0px; -webkit-text-stroke-width: 0px; backgroun=
+d-color: #ffffff; float: none; display: inline !important;">SHOP MEN</span>=
+</a></span></p><p style=3D"margin: 0px;" align=3D"left" data-mce-style=3D"m=
+argin: 0px;"><span style=3D"font-size: 10pt;" data-mce-style=3D"font-size: =
+10pt;"><a style=3D"text-decoration: none;" href=3D"https://u8795420.ct.send=
+grid.net/ls/click?upn=3DSCRUBBED" data-mce-href=3D"https://www.terminalx.co=
+m/kids?utm_source=3Dnewsletter&utm_medium=3Demail&utm_content=3Dshop-kids&u=
+tm_campaign=3Dinfo_mail" data-mce-style=3D"text-decoration: none;"><span st=
+yle=3D"color: #000000; font-family: Arial, sans-serif; font-style: normal; =
+font-variant-ligatures: normal; font-variant-caps: normal; font-weight: 400=
+; letter-spacing: normal; text-align: left; text-indent: 0px; text-transfor=
+m: uppercase; white-space: normal; word-spacing: 0px; -webkit-text-stroke-w=
+idth: 0px; background-color: #ffffff; float: none; display: inline !importa=
+nt;" data-mce-style=3D"color: #000000; font-family: Arial, sans-serif; font=
+-style: normal; font-variant-ligatures: normal; font-variant-caps: normal; =
+font-weight: 400; letter-spacing: normal; text-align: left; text-indent: 0p=
+x; text-transform: uppercase; white-space: normal; word-spacing: 0px; -webk=
+it-text-stroke-width: 0px; background-color: #ffffff; float: none; display:=
+ inline !important;">SHOP KIDS</span></a></span></p><p dir=3D"ltr" style=3D=
+"margin: 0px;" align=3D"left" data-mce-style=3D"margin: 0px;"><strong><span=
+ style=3D"color: #222222; font-family: Arial, sans-serif; font-size: 12pt; =
+font-style: normal; font-variant-ligatures: normal; font-variant-caps: norm=
+al; letter-spacing: normal; text-align: left; text-indent: 0px; text-transf=
+orm: uppercase; white-space: normal; word-spacing: 0px; -webkit-text-stroke=
+-width: 0px; background-color: #ffffff; float: none; display: inline !impor=
+tant;" data-mce-style=3D"color: #222222; font-family: Arial, sans-serif; fo=
+nt-size: 12pt; font-style: normal; font-variant-ligatures: normal; font-var=
+iant-caps: normal; letter-spacing: normal; text-align: left; text-indent: 0=
+px; text-transform: uppercase; white-space: normal; word-spacing: 0px; -web=
+kit-text-stroke-width: 0px; background-color: #ffffff; float: none; display=
+: inline !important;">GET ON BOARD</span></strong></p><p dir=3D"ltr" style=
+=3D"margin: 0px;" align=3D"left" data-mce-style=3D"margin: 0px;"><span styl=
+e=3D"color: #000000; font-family: Arial, sans-serif; font-size: 10pt; font-=
+style: normal; font-variant-ligatures: normal; font-variant-caps: normal; f=
+ont-weight: 400; letter-spacing: normal; text-align: left; text-indent: 0px=
+; text-transform: uppercase; white-space: normal; word-spacing: 0px; -webki=
+t-text-stroke-width: 0px; background-color: #ffffff; float: none; display: =
+inline !important;" data-mce-style=3D"color: #000000; font-family: Arial, s=
+ans-serif; font-size: 10pt; font-style: normal; font-variant-ligatures: nor=
+mal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; t=
+ext-align: left; text-indent: 0px; text-transform: uppercase; white-space: =
+normal; word-spacing: 0px; -webkit-text-stroke-width: 0px; background-color=
+: #ffffff; float: none; display: inline !important;"><a style=3D"color: #00=
+0000; text-decoration: none;" href=3D"https://u8795420.ct.sendgrid.net/ls/c=
+lick?upn=3DSCRUBBED" data-mce-href=3D"https://www.facebook.com/WEARETERMINA=
+LX" data-mce-style=3D"color: #000000; text-decoration: none;">FACEBOOK</a><=
+/span></p><p dir=3D"ltr" style=3D"margin: 0px;" align=3D"left" data-mce-sty=
+le=3D"margin: 0px;"><span style=3D"color: #222222; font-family: Arial, sans=
+-serif; font-size: 10pt; font-style: normal; font-variant-ligatures: normal=
+; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; text=
+-align: left; text-indent: 0px; text-transform: uppercase; white-space: nor=
+mal; word-spacing: 0px; -webkit-text-stroke-width: 0px; background-color: #=
+ffffff; float: none; display: inline !important;" data-mce-style=3D"color: =
+#222222; font-family: Arial, sans-serif; font-size: 10pt; font-style: norma=
+l; font-variant-ligatures: normal; font-variant-caps: normal; font-weight: =
+400; letter-spacing: normal; text-align: left; text-indent: 0px; text-trans=
+form: uppercase; white-space: normal; word-spacing: 0px; -webkit-text-strok=
+e-width: 0px; background-color: #ffffff; float: none; display: inline !impo=
+rtant;"><span style=3D"color: #000000;" data-mce-style=3D"color: #000000;">=
+<a style=3D"color: #000000; text-decoration: none;" href=3D"https://u879542=
+0.ct.sendgrid.net/ls/click?upn=3DSCRUBBED" data-mce-href=3D"https://www.ins=
+tagram.com/terminalx" data-mce-style=3D"color: #000000; text-decoration: no=
+ne;">INSTAGRAM</a></span><br></span></p><div align=3D"left"><span style=3D"=
+color: #000000; font-size: 10pt;" data-mce-style=3D"color: #000000; font-si=
+ze: 10pt;"><a style=3D"color: #000000; text-decoration: none;" href=3D"http=
+s://u8795420.ct.sendgrid.net/ls/click?upn=3DSCRUBBED" data-mce-href=3D"http=
+s://www.youtube.com/channel/UCUTXP6iS-VyE1Vxllg_3W5g?view_as=3Dsubscriber" =
+data-mce-style=3D"color: #000000; text-decoration: none;">YOUTUBE</a></span=
+></div></td>
+                                                                           =
+                             </tr>
+                                                                           =
+                             <tr>
+                                                                           =
+                                 <td height=3D"5" width=3D"100%" style=3D"f=
+ont-size: 1px;line-height: 1px;border-collapse: collapse;mso-line-height-ru=
+le: exactly;">
+                                                                           =
+                                 </td>
+                                                                           =
+                             </tr>
+                        </table>
+                        <!--[if mso]>
+                        </td>
+                        </tr>
+                        </table>
+                        <![endif]-->
+                    </td>
+                </tr>
+            </table>
+            <!--[if mso]>
+            </td>
+            </tr>
+            </table>
+            <![endif]-->
+        </td>
+    </tr>
+   =20
+</table>
+
+
+<!-- Footer : END -->
+
+<!-- LINE: BEGIN -->   =20
+<table role=3D"presentation" cellspacing=3D"0" cellpadding=3D"0" border=3D"=
+0" align=3D"center" width=3D"100%" style=3D"max-width: 680px;">
+    <tr>
+        <td bgcolor=3D"#ffffff" style=3D"padding: 0 20px 20px;">
+            <hr style=3D"margin: 0;"/>
+        </td>
+    <tr>   =20
+</table>               =20
+<!-- LINE: END -->=20
+
+<!--[if mso]>
+</td>
+</tr>
+</table>
+<![endif]-->
+</div>
+</center>
+<img src=3D"https://u8795420.ct.sendgrid.net/wf/open?upn=3DSCRUBBED" alt=3D=
+"" width=3D"1" height=3D"1" border=3D"0" style=3D"height:1px !important;wid=
+th:1px !important;border-width:0 !important;margin-top:0 !important;margin-=
+bottom:0 !important;margin-right:0 !important;margin-left:0 !important;padd=
+ing-top:0 !important;padding-bottom:0 !important;padding-right:0 !important=
+;padding-left:0 !important;"/></body>
+
+<table cellspacing=3D"0" cellpadding=3D"0" border=3D"0" align=3D"center" wi=
+dth=3D"100%" style=3D"max-width: 680px;">
+    <tr>
+        <td bgcolor=3D"#ffffff" style=3D"padding: 0 20px 20px;">
+            <div style=3D"font-size:10px; text-align:right; direction:rtl">
+                =D7=A0=D7=99=D7=AA=D7=9F =D7=9C=D7=91=D7=98=D7=9C =D7=A2=D7=
+=A1=D7=A7=D7=94 =D7=91=D7=9B=D7=A4=D7=95=D7=A3 =D7=95=D7=91=D7=94=D7=AA=D7=
+=90=D7=9D =D7=9C=D7=94=D7=95=D7=A8=D7=90=D7=95=D7=AA =D7=97=D7=95=D7=A7 =D7=
+=94=D7=92=D7=A0=D7=AA =D7=94=D7=A6=D7=A8=D7=9B=D7=9F =D7=94=D7=AA=D7=A9=D7=
+=9E"=D7=90 1981 =D7=95=D7=9C=D7=A8=D7=91=D7=95=D7=AA =D7=94=D7=AA=D7=A7=D7=
+=A0=D7=95=D7=AA =D7=9E=D7=9B=D7=95=D7=97=D7=95, =D7=9E=D7=99=D7=95=D7=9D =
+=D7=A2=D7=A9=D7=99=D7=99=D7=AA =D7=94=D7=A2=D7=A1=D7=A7=D7=94 =D7=95=D7=A2=
+=D7=93
+                14 =D7=99=D7=9E=D7=99=D7=9D =D7=9E=D7=99=D7=95=D7=9D =D7=A7=
+=D7=91=D7=9C=D7=AA =D7=94=D7=9E=D7=95=D7=A6=D7=A8 =D7=90=D7=95 =D7=9E=D7=99=
+=D7=95=D7=9D =D7=A7=D7=91=D7=9C=D7=AA =D7=94=D7=95=D7=93=D7=A2=D7=95=D7=AA =
+=D7=90=D7=99=D7=9E=D7=95=D7=AA =D7=A2=D7=9D =D7=A4=D7=A8=D7=98=D7=99 =D7=94=
+=D7=94=D7=96=D7=9E=D7=A0=D7=94 =D7=9B=D7=A0=D7=93=D7=A8=D7=A9 =D7=A2=D7=9C =
+=D7=A4=D7=99 =D7=94=D7=97=D7=95=D7=A7, =D7=9C=D7=A4=D7=99 =D7=94=D7=9E=D7=
+=90=D7=95=D7=97=D7=A8 =D7=9E=D7=91=D7=A0=D7=99=D7=94=D7=9D.
+                =D7=91=D7=9E=D7=A7=D7=A8=D7=94 =D7=A9=D7=9C =D7=91=D7=99=D7=
+=98=D7=95=D7=9C =D7=A9=D7=9C=D7=90 =D7=91=D7=A9=D7=9C =D7=A4=D7=92=D7=9D =
+=D7=90=D7=95 =D7=90=D7=99 =D7=94=D7=AA=D7=90=D7=9E=D7=94, =D7=AA=D7=94=D7=
+=99=D7=94 =D7=94=D7=97=D7=91=D7=A8=D7=94 =D7=A8=D7=A9=D7=90=D7=99=D7=AA =D7=
+=9C=D7=92=D7=91=D7=95=D7=AA =D7=93=D7=9E=D7=99 =D7=91=D7=99=D7=98=D7=95=D7=
+=9C =D7=91=D7=A9=D7=99=D7=A2=D7=95=D7=A8 =D7=A9=D7=9C=D7=90 =D7=99=D7=A2=D7=
+=9C=D7=94 =D7=A2=D7=9C 5% =D7=9E=D7=9E=D7=97=D7=99=D7=A8
+                =D7=94=D7=A0=D7=9B=D7=A1 =D7=A0=D7=95=D7=A9=D7=90 =D7=94=D7=
+=A2=D7=A1=D7=A7=D7=94, =D7=90=D7=95 100 =D7=A9=D7=A7=D7=9C=D7=99=D7=9D =D7=
+=97=D7=93=D7=A9=D7=99=D7=9D, =D7=9C=D7=A4=D7=99 =D7=94=D7=A0=D7=9E=D7=95=D7=
+=9A =D7=9E=D7=91=D7=99=D7=A0=D7=99=D7=94=D7=9D (=D7=9C=D7=94=D7=9C=D7=9F: "=
+=D7=93=D7=9E=D7=99 =D7=91=D7=99=D7=98=D7=95=D7=9C").
+
+                <br>=D7=90=D7=AA =D7=94=D7=95=D7=93=D7=A2=D7=AA =D7=94=D7=
+=91=D7=99=D7=98=D7=95=D7=9C =D7=A0=D7=99=D7=AA=D7=9F =D7=9C=D7=9E=D7=A1=D7=
+=95=D7=A8 =D7=91=D7=90=D7=97=D7=AA =D7=94=D7=9E=D7=93=D7=A8=D7=9B=D7=99=D7=
+=9D =D7=A9=D7=9C=D7=94=D7=9C=D7=9F:
+                <br> -=D7=91=D7=A2=D7=A8=D7=95=D7=A5 =D7=94=D7=95=D7=95=D7=
+=98=D7=A1=D7=90=D7=A4 =D7=91=D7=98=D7=9C=D7=A4=D7=95=D7=9F 055-9762673.
+                <br> -=D7=91=D7=93=D7=95=D7=90=D7=A8 =D7=90=D7=9C=D7=A7=D7=
+=98=D7=A8=D7=95=D7=A0=D7=99 =D7=9C=D7=9B=D7=AA=D7=95=D7=91=D7=AA =D7=90=D7=
+=99=D7=9E=D7=99=D7=99=D7=9C =D7=A9=D7=99=D7=A8=D7=95=D7=AA =D7=94=D7=9C=D7=
+=A7=D7=95=D7=97=D7=95=D7=AA =D7=A9=D7=9C =D7=94=D7=97=D7=91=D7=A8=D7=94: su=
+pport@terminalx.com
+                <br> -=D7=91=D7=90=D7=9E=D7=A6=D7=A2=D7=95=D7=AA =D7=94=D7=
+=A6'=D7=98 =D7=91=D7=90=D7=AA=D7=A8.
+                <br> -=D7=91=D7=93=D7=95=D7=90=D7=A8 =D7=A8=D7=A9=D7=95=D7=
+=9D =D7=9C=D7=9B=D7=91=D7=95=D7=93 =D7=A9=D7=99=D7=A8=D7=95=D7=AA =D7=9C=D7=
+=A7=D7=95=D7=97=D7=95=D7=AA =D7=98=D7=A8=D7=9E=D7=99=D7=A0=D7=9C =D7=90=D7=
+=99=D7=A7=D7=A1 =D7=90=D7=95=D7=A0=D7=9C=D7=99=D7=99=D7=9F =D7=91=D7=A2"=D7=
+=9E, =D7=94=D7=99=D7=A8=D7=A7=D7=95=D7=9F 2 =D7=91=D7=A0=D7=99 =D7=91=D7=A8=
+=D7=A7.
+                <br> -=D7=91=D7=A2"=D7=A4 =D7=91=D7=9E=D7=A9=D7=A8=D7=93 =
+=D7=94=D7=97=D7=91=D7=A8=D7=94 =D7=91=D7=9B=D7=AA=D7=95=D7=91=D7=AA =D7=94=
+=D7=99=D7=A8=D7=A7=D7=95=D7=9F 2 =D7=91=D7=A0=D7=99 =D7=91=D7=A8=D7=A7 =D7=
+=A7=D7=95=D7=9E=D7=94 22 =D7=91=D7=99=D7=9E=D7=99=D7=9D =D7=90'-=D7=94' =D7=
+=91=D7=99=D7=9F =D7=94=D7=A9=D7=A2=D7=95=D7=AA 09:00-17:00.
+                <br> -=D7=91=D7=90=D7=AA=D7=A8 =D7=94=D7=90=D7=99=D7=A0=D7=
+=98=D7=A8=D7=A0=D7=98 =D7=A9=D7=9C=D7=A0=D7=95, =D7=91=D7=A7=D7=99=D7=A9=D7=
+=95=D7=A8 =D7=94=D7=99=D7=99=D7=A2=D7=95=D7=93=D7=99 =D7=94=D7=9E=D7=95=D7=
+=A4=D7=99=D7=A2 =D7=91=D7=AA=D7=97=D7=AA=D7=99=D7=AA =D7=94=D7=90=D7=AA=D7=
+=A8 =D7=AA=D7=97=D7=AA =D7=94=D7=9B=D7=95=D7=AA=D7=A8=D7=AA "=D7=91=D7=99=
+=D7=98=D7=95=D7=9C =D7=A2=D7=A1=D7=A7=D7=94".
+                <br> =D7=91=D7=94=D7=95=D7=93=D7=A2=D7=AA =D7=94=D7=91=D7=
+=99=D7=98=D7=95=D7=9C =D7=99=D7=A9 =D7=9C=D7=A6=D7=99=D7=99=D7=9F =D7=A9=D7=
+=9D, =D7=9E=D7=A1' =D7=AA.=D7=96, =D7=9E=D7=A1' =D7=94=D7=96=D7=9E=D7=A0=D7=
+=94, =D7=95=D7=90=D7=9D =D7=A0=D7=9E=D7=A1=D7=A8=D7=94 =D7=94=D7=95=D7=93=
+=D7=A2=D7=AA =D7=94=D7=91=D7=99=D7=98=D7=95=D7=9C =D7=91=D7=98=D7=9C=D7=A4=
+=D7=95=D7=9F =D7=99=D7=A9 =D7=9C=D7=A6=D7=99=D7=99=D7=9F =D7=92=D7=9D =D7=
+=90=D7=AA =D7=9E=D7=A1'
+                =D7=94=D7=98=D7=9C=D7=A4=D7=95=D7=9F =D7=A9=D7=9C =D7=94=D7=
+=9E=D7=A9=D7=9C=D7=9D =D7=94=D7=9E=D7=95=D7=A4=D7=99=D7=A2 =D7=91=D7=94=D7=
+=96=D7=9E=D7=A0=D7=94.
+                <br> =D7=91=D7=9B=D7=9C =D7=91=D7=A2=D7=99=D7=94 =D7=90=D7=
+=95 =D7=AA=D7=A7=D7=9C=D7=94 =D7=A0=D7=99=D7=AA=D7=9F =D7=9C=D7=A4=D7=A0=D7=
+=95=D7=AA =D7=9C=D7=A9=D7=99=D7=A8=D7=95=D7=AA =D7=94=D7=9C=D7=A7=D7=95=D7=
+=97=D7=95=D7=AA =D7=91=D7=95=D7=95=D7=98=D7=A1=D7=90=D7=A4 =D7=91=D7=98=D7=
+=9C=D7=A4=D7=95=D7=9F 055-9762673 =D7=95=D7=91=D7=93=D7=95=D7=90"=D7=9C sup=
+port@terminalx.com
+                .
+                <br> =D7=A0=D7=91=D7=A7=D7=A9=D7=9A =D7=9C=D7=94=D7=A9=D7=
+=99=D7=91 =D7=90=D7=AA =D7=94=D7=9E=D7=95=D7=A6=D7=A8 =D7=91=D7=90=D7=A8=D7=
+=99=D7=96=D7=AA=D7=95 =D7=94=D7=9E=D7=A7=D7=95=D7=A8=D7=99=D7=AA =D7=9B=D7=
+=A9=D7=94=D7=95=D7=90 =D7=A9=D7=9C=D7=9D, =D7=AA=D7=A7=D7=99=D7=9F =D7=95=
+=D7=9C=D7=9C=D7=90 =D7=9B=D7=9C =D7=A4=D7=92=D7=9D =D7=9E=D7=9B=D7=9C =D7=
+=A1=D7=95=D7=92 =D7=A9=D7=94=D7=95=D7=90, =D7=95=D7=9E=D7=91=D7=9C=D7=99 =
+=D7=A9=D7=A0=D7=A2=D7=A9=D7=94 =D7=91=D7=95 =D7=A9=D7=99=D7=9E=D7=95=D7=A9
+                =D7=9B=D7=9C=D7=A9=D7=94=D7=95.
+                <br> =D7=90=D7=93=D7=9D =D7=A2=D7=9D =D7=9E=D7=95=D7=92=D7=
+=91=D7=9C=D7=95=D7=AA, =D7=90=D7=96=D7=A8=D7=97 =D7=95=D7=AA=D7=99=D7=A7 =
+=D7=95=D7=A2=D7=95=D7=9C=D7=94 =D7=97=D7=93=D7=A9 (=D7=9B=D7=94=D7=92=D7=93=
+=D7=A8=D7=AA=D7=9D =D7=91=D7=97=D7=95=D7=A7), =D7=A9=D7=91=D7=99=D7=A6=D7=
+=A2 =D7=A2=D7=A1=D7=A7=D7=94 =D7=9C=D7=A8=D7=9B=D7=99=D7=A9=D7=AA =D7=9E=D7=
+=95=D7=A6=D7=A8 =D7=91=D7=90=D7=AA=D7=A8, =D7=A8=D7=A9=D7=90=D7=99 =D7=9C=
+=D7=91=D7=98=D7=9C =D7=90=D7=AA =D7=94=D7=A2=D7=A1=D7=A7=D7=94
+                =D7=91=D7=AA=D7=95=D7=9A =D7=90=D7=A8=D7=91=D7=A2=D7=94 =D7=
+=97=D7=95=D7=93=D7=A9=D7=99=D7=9D =D7=9E=D7=99=D7=95=D7=9D =D7=A2=D7=A9=D7=
+=99=D7=99=D7=AA =D7=94=D7=A2=D7=A1=D7=A7=D7=94, =D7=9E=D7=99=D7=95=D7=9D =
+=D7=A7=D7=91=D7=9C=D7=AA =D7=94=D7=9E=D7=95=D7=A6=D7=A8 =D7=90=D7=95 =D7=9E=
+=D7=99=D7=95=D7=9D =D7=A7=D7=91=D7=9C=D7=AA =D7=9E=D7=A1=D7=9E=D7=9A =D7=96=
+=D7=94, =D7=9C=D7=A4=D7=99 =D7=94=D7=9E=D7=90=D7=95=D7=97=D7=A8 =D7=95=D7=
+=91=D7=9C=D7=91=D7=93 =D7=A9=D7=94=D7=94=D7=AA=D7=A7=D7=A9=D7=A8=D7=95=D7=
+=AA
+                =D7=91=D7=A2=D7=A1=D7=A7=D7=94 =D7=9B=D7=9C=D7=9C=D7=94 =D7=
+=A9=D7=99=D7=97=D7=94 =D7=91=D7=99=D7=9F =D7=94=D7=9C=D7=A7=D7=95=D7=97 =D7=
+=95=D7=91=D7=99=D7=9F =D7=94=D7=97=D7=91=D7=A8=D7=94, =D7=95=D7=91=D7=9B=D7=
+=9C=D7=9C =D7=96=D7=94 =D7=91=D7=90=D7=9E=D7=A6=D7=A2=D7=95=D7=AA =D7=AA=D7=
+=A7=D7=A9=D7=95=D7=A8=D7=AA =D7=90=D7=9C=D7=A7=D7=98=D7=A8=D7=95=D7=A0=D7=
+=99=D7=AA.
+                <br> =D7=94=D7=97=D7=91=D7=A8=D7=94 =D7=AA=D7=94=D7=99=D7=
+=94 =D7=A8=D7=A9=D7=90=D7=99=D7=AA =D7=9C=D7=91=D7=A7=D7=A9 =D7=9E=D7=94=D7=
+=9C=D7=A7=D7=95=D7=97 =D7=AA=D7=A2=D7=95=D7=93=D7=94, =D7=9B=D7=9E=D7=A4=D7=
+=95=D7=A8=D7=98 =D7=91=D7=97=D7=95=D7=A7, =D7=94=D7=9E=D7=95=D7=9B=D7=99=D7=
+=97=D7=94 =D7=9B=D7=99 =D7=94=D7=95=D7=90 =D7=90=D7=93=D7=9D =D7=A2=D7=9D =
+=D7=9E=D7=95=D7=92=D7=91=D7=9C=D7=95=D7=AA, =D7=90=D7=96=D7=A8=D7=97 =D7=95=
+=D7=AA=D7=99=D7=A7 =D7=90=D7=95 =D7=A2=D7=95=D7=9C=D7=94
+                =D7=97=D7=93=D7=A9, =D7=9C=D7=A4=D7=99 =D7=94=D7=A2=D7=A0=
+=D7=99=D7=99=D7=9F.
+                <br> =D7=9C=D7=A4=D7=A8=D7=98=D7=99=D7=9D =D7=A0=D7=95=D7=
+=A1=D7=A4=D7=99=D7=9D =D7=91=D7=A0=D7=95=D7=92=D7=A2 =D7=9C=D7=90=D7=95=D7=
+=A4=D7=9F =D7=94=D7=97=D7=96=D7=A8=D7=94 =D7=95=D7=94=D7=97=D7=9C=D7=A4=D7=
+=94 =D7=A9=D7=9C =D7=A4=D7=A8=D7=99=D7=98=D7=99=D7=9D : https://www.termina=
+lx.com/help-returns
+                <br> =D7=91=D7=9B=D7=9C =D7=9E=D7=A7=D7=A8=D7=94 =D7=9C=D7=
+=90 =D7=AA=D7=99=D7=A9=D7=90 =D7=94=D7=97=D7=91=D7=A8=D7=94 =D7=91=D7=90=D7=
+=97=D7=A8=D7=99=D7=95=D7=AA =D7=9B=D7=9C=D7=A9=D7=94=D7=99 =D7=A9=D7=94=D7=
+=A2=D7=9C=D7=95=D7=AA =D7=91=D7=9E=D7=A1=D7=92=D7=A8=D7=AA=D7=94 =D7=A2=D7=
+=95=D7=9C=D7=94 =D7=A2=D7=9C =D7=A2=D7=A8=D7=9A =D7=94=D7=9E=D7=95=D7=A6=D7=
+=A8 =D7=94=D7=A0=D7=A8=D7=9B=D7=A9 =D7=95=D7=9B=D7=9F =D7=91=D7=9B=D7=9C =
+=D7=A0=D7=96=D7=A7 =D7=A9=D7=90=D7=99=D7=A0=D7=95 =D7=99=D7=A9=D7=99=D7=A8
+                =D7=95/=D7=90=D7=95 =D7=A0=D7=96=D7=A7 =D7=AA=D7=95=D7=A6=
+=D7=90=D7=AA=D7=99.
+                <br> =D7=91=D7=91=D7=A8=D7=9B=D7=94, =D7=98=D7=A8=D7=9E=D7=
+=99=D7=A0=D7=9C =D7=90=D7=99=D7=A7=D7=A1 =D7=97.=D7=A4 515722536
+            </div>
+        </td>
+    <tr>
+</table>
+
+<!-- LINE: BEGIN -->
+<table cellspacing=3D"0" cellpadding=3D"0" border=3D"0" align=3D"center" wi=
+dth=3D"100%" style=3D"max-width: 680px;">
+    <tr>
+        <td bgcolor=3D"#ffffff" style=3D"padding: 0 20px 20px;">
+            <hr style=3D"margin: 0;" />
+        </td>
+    <tr>
+</table>
+<!-- LINE: END -->
