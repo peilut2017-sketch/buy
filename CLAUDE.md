@@ -15,6 +15,7 @@ The owner (Nachoom) is a hands-on product owner who builds solo with Claude Code
 | `docs/05-roadmap.md` | Phases, tasks, acceptance criteria | To pick the next task |
 | `docs/06-research-checklist.md` | Phase 0 facts to verify on the live site | Before writing adapter code |
 | `docs/07-open-decisions.md` | Decisions still open | When a task depends on one |
+| `docs/09-status.md` | What is built, what was never verified, open questions | Before picking up work, and when updating status |
 
 Visual reference (owner's private links, open only if he shares access): sketch canvas `https://claude.ai/artifact/PSqzxhmBocwuEB47CdjnWa` (row "גרסה ג׳" is the chosen direction), planning doc `https://claude.ai/artifact/Dc1Bgon1DvXwTrk17HT3Cf`.
 
