@@ -14,3 +14,10 @@
 .form { display: flex; flex-direction: column; gap: var(--space-4); }
 .form__section { display: flex; flex-direction: column; gap: var(--space-3); }
 .ltr-input { direction: ltr; text-align: start; }
+
+/* ---- price chart ---- */
+.sb-chart text { font: 500 11px var(--font); fill: var(--sb-text-secondary); font-variant-numeric: tabular-nums; }
+.sb-chart__grid { stroke: var(--sb-divider); stroke-width: 1; }
+.sb-chart__line { fill: none; stroke: var(--sb-text-primary); stroke-width: 2; stroke-linejoin: round; }
+.sb-chart__target { stroke: var(--sb-accent); stroke-width: 1.5; stroke-dasharray: 5 4; }
+.sb-chart__dot { fill: var(--sb-text-primary); }

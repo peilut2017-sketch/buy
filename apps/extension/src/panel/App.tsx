@@ -1,5 +1,5 @@
 import type { ReviewView } from "@smartbuy/core";
-import { AppealForm, Button, IconButton, Notice, ProductHeader, ReportForm, RequireAccount, ReviewsView, Root, SignInCard, Skel, WriteFlow } from "@smartbuy/ui";
+import { AppealForm, Button, IconButton, Notice, ProductHeader, ReportForm, RequireAccount, ReviewsView, Root, Segmented, SignInCard, Skel, TrackingView, WriteFlow } from "@smartbuy/ui";
 import { useEffect, useState } from "preact/hooks";
 import { currentIdentity, useSession } from "../lib/auth.ts";
 import { BACKEND_CONFIGURED } from "../lib/env.ts";
@@ -7,6 +7,8 @@ import { siteById } from "../lib/sites.ts";
 import { NotDetected } from "./NotDetected.tsx";
 import { toTarget, type ProductRef } from "./target.ts";
 import { useActiveTab } from "./useActiveTab.ts";
+
+type Tab = "reviews" | "tracking";
 
 type View =
   | { name: "list" }
@@ -30,6 +32,7 @@ export function App() {
   const [manual, setManual] = useState<ProductRef | null>(null);
   const [view, setView] = useState<View>({ name: "list" });
   const [version, setVersion] = useState(0);
+  const [tabName, setTabName] = useState<Tab>("reviews");
 
   const site = tab.product ? siteById(tab.product.siteId) : undefined;
   const fromTab: ProductRef | null =
@@ -41,10 +44,17 @@ export function App() {
   // A different product, or a different tab, starts again at the list.
   useEffect(() => {
     setView({ name: "list" });
+    setTabName("reviews");
   }, [productKey]);
   // The strip's button can ask for the write form directly.
   useEffect(() => {
-    if (tab.mode === "write" && fromTab) setView({ name: "write" });
+    if (!fromTab) return;
+    if (tab.mode === "write") setView({ name: "write" });
+    if (tab.mode === "tracking") {
+      setView({ name: "list" });
+      setTabName("tracking");
+    }
+    if (tab.mode === "reviews") setTabName("reviews");
   }, [tab.mode, fromTab?.parentSku]);
 
   const backToList = (reload = false) => {
@@ -79,6 +89,16 @@ export function App() {
     );
   } else if (view.name === "signin") {
     content = <SignInView reason={view.reason} onDone={() => backToList(true)} />;
+  } else if (tabName === "tracking") {
+    content = (
+      <TrackingView
+        target={target}
+        identity={identity}
+        getIdentity={currentIdentity}
+        version={version}
+        onNeedSignIn={(reason) => setView({ name: "signin", reason })}
+      />
+    );
   } else {
     content = (
       <ReviewsView
@@ -105,7 +125,21 @@ export function App() {
           )}
         </header>
       )}
-      <main class="panel__main">{content}</main>
+      {target && view.name === "list" && (
+        <nav class="panel__tabs" aria-label="חלקי הפאנל">
+          <Segmented
+            label="תצוגה"
+            value={tabName}
+            onChange={setTabName}
+            items={[{ id: "reviews", label: "ביקורות" }, { id: "tracking", label: "מחיר ומעקב" }]}
+          />
+        </nav>
+      )}
+      <main class="panel__main">
+        {target && view.name === "list" ? (
+          <div class="sb-stack sb-gap-4" role="tabpanel" id={`sb-panel-${tabName}`} aria-labelledby={`sb-tab-${tabName}`}>{content}</div>
+        ) : content}
+      </main>
       <footer class="panel__footer">SmartBuy הוא שירות עצמאי ואין לו קשר לחנויות.</footer>
     </Root>
   );

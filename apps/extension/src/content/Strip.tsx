@@ -1,11 +1,18 @@
-import { fitMeter, formatRating, countLabel, REVIEWS, VERIFIED_REVIEWS, type ProductSummary } from "@smartbuy/core";
+import { fitMeter, formatDateHe, formatIls, formatRating, countLabel, REVIEWS, VERIFIED_REVIEWS, type ProductSummary } from "@smartbuy/core";
 import { Button, FitMeter, IconButton, Root, Skel, Stars } from "@smartbuy/ui";
 import type { PanelMode } from "../lib/messages.ts";
 
 export type StripState = { kind: "loading" } | { kind: "ready"; summary: ProductSummary | null } | { kind: "error" };
 
+/** What the strip says about the price. Both parts are optional: nothing is shown that was not measured. */
+export interface StripPrice {
+  current: number | null;
+  lowest: { price: number; since: string } | null;
+}
+
 export interface StripProps {
   state: StripState;
+  price: StripPrice | null;
   /** The glass frame is made opaque over a dark or busy page. */
   opaque: boolean;
   onOpen: (mode: PanelMode) => void;
@@ -22,7 +29,22 @@ function Brand() {
   );
 }
 
-function Body({ state, onOpen, onRetry }: Pick<StripProps, "state" | "onOpen" | "onRetry">) {
+function PriceLine({ price, onOpen }: { price: StripPrice | null; onOpen: StripProps["onOpen"] }) {
+  const lowest = price?.lowest ?? null;
+  return (
+    <div class="strip__price">
+      {price?.current != null && <span class="strip__amount sb-num">{formatIls(price.current)}</span>}
+      {lowest && (
+        <span class="sb-t-support sb-secondary">
+          הכי נמוך ב-90 יום: <span class="sb-num">{formatIls(lowest.price)}</span>, מ-{formatDateHe(new Date(lowest.since))}
+        </span>
+      )}
+      <Button small icon="bell" onClick={() => onOpen("tracking")}>מעקב מחיר</Button>
+    </div>
+  );
+}
+
+function Body({ state, price, onOpen, onRetry }: Pick<StripProps, "state" | "price" | "onOpen" | "onRetry">) {
   if (state.kind === "loading") {
     return (
       <div class="sb-stack sb-gap-2" role="status" aria-label="טוענים ביקורות">
@@ -53,6 +75,7 @@ function Body({ state, onOpen, onRetry }: Pick<StripProps, "state" | "onOpen" | 
         <div>
           <Button variant="primary" small onClick={() => onOpen("write")}>כתיבת ביקורת</Button>
         </div>
+        <PriceLine price={price} onOpen={onOpen} />
       </div>
     );
   }
@@ -72,11 +95,12 @@ function Body({ state, onOpen, onRetry }: Pick<StripProps, "state" | "onOpen" | 
       <div>
         <Button variant="primary" small onClick={() => onOpen("reviews")}>ביקורות</Button>
       </div>
+      <PriceLine price={price} onOpen={onOpen} />
     </div>
   );
 }
 
-export function Strip({ state, opaque, onOpen, onClose, onRetry }: StripProps) {
+export function Strip({ state, price, opaque, onOpen, onClose, onRetry }: StripProps) {
   return (
     <Root class="strip">
       <section class={opaque ? "sb-shell sb-shell--opaque" : "sb-shell"} aria-label="SmartBuy: ביקורות על המוצר">
@@ -86,7 +110,7 @@ export function Strip({ state, opaque, onOpen, onClose, onRetry }: StripProps) {
             <span class="sb-grow" />
             <IconButton icon="close" label="סגירת הפס" onClick={onClose} />
           </div>
-          <Body state={state} onOpen={onOpen} onRetry={onRetry} />
+          <Body state={state} price={price} onOpen={onOpen} onRetry={onRetry} />
         </div>
       </section>
     </Root>

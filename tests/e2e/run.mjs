@@ -444,6 +444,92 @@ await check("the panel passes the accessibility audit in its main states", async
   await panel.close();
 });
 
+console.log("\nPrice tracking");
+
+await check("the strip shows the price, the lowest price of 90 days and a tracking button", async () => {
+  const page = await productPage("w817260002");
+  await stripOf(page);
+  await page.waitForFunction(() => document.querySelector("smartbuy-strip")?.shadowRoot?.textContent?.includes("הכי נמוך"), null, { timeout: 8000 });
+  const text = await stripText(page);
+  for (const expected of ["₪149.90", "הכי נמוך ב-90 יום", "מעקב מחיר"]) assert.ok(text.includes(expected), `missing "${expected}" in: ${text}`);
+  await shot(page, "strip-price");
+  const violations = await runAxe(page, "strip-price", "smartbuy-strip");
+  assert.deepEqual(violations, [], JSON.stringify(violations));
+  await page.close();
+});
+
+await check("the panel's price tab draws the history, rejects a target at or above the price, and saves a watch only after the server confirmed", async () => {
+  mock.state.watches = [];
+  const { product, panel } = await openPanel("w817260002");
+  await panel.getByRole("tab", { name: "מחיר ומעקב" }).click();
+  await panel.getByRole("img", { name: /מחיר/ }).waitFor();
+  const text = await panel.locator("body").innerText();
+  for (const expected of ["₪149.90", "הכי נמוך ב-90 יום"]) assert.ok(text.includes(expected), `missing "${expected}"`);
+  await shot(panel, "panel-tracking", { fullPage: true });
+
+  await panel.getByLabel(/מחיר יעד/).fill("200");
+  await panel.getByRole("button", { name: "שמירת מעקב" }).click();
+  await panel.getByText(/צריך להיות נמוך מהמחיר הנוכחי/).first().waitFor();
+  assert.equal(mock.state.watches.length, 0, "nothing should be saved for an invalid target");
+
+  await panel.getByLabel(/מחיר יעד/).fill("120");
+  await panel.getByRole("button", { name: "שמירת מעקב" }).click();
+  await panel.getByText("המעקב נשמר").waitFor();
+  assert.equal(mock.state.watches.length, 1);
+  assert.equal(Number(mock.state.watches[0].target_price), 120);
+  await panel.getByText(/עוקבים: מחיר יעד ₪120/).waitFor();
+  const violations = await runAxe(panel, "panel-tracking");
+  assert.deepEqual(violations, [], JSON.stringify(violations));
+  await product.close();
+  await panel.close();
+});
+
+await check("a failed save of a watch is reported as failed", async () => {
+  mock.state.watches = [];
+  const { product, panel } = await openPanel("w817260002");
+  await panel.getByRole("tab", { name: "מחיר ומעקב" }).click();
+  await panel.getByLabel(/מחיר יעד/).fill("100");
+  await panel.route("**/rest/v1/watches*", (route) => route.abort());
+  await panel.getByRole("button", { name: "שמירת מעקב" }).click();
+  await panel.getByText(/המעקב לא נשמר/).waitFor();
+  assert.equal(await panel.getByText("המעקב נשמר").count(), 0);
+  await product.close();
+  await panel.close();
+});
+
+await check("the popup lists watches and stopping one removes it on the server", async () => {
+  mock.state.watches = [{ id: 40, user_id: "x", product_id: 1, variant_id: 11, target_price: "120", drop_percent: null, notify_restock: false, restock_variant_values: null, active: true }];
+  const page = await context.newPage();
+  await page.setViewportSize({ width: 360, height: 560 });
+  await page.goto(env.extUrl("popup.html"));
+  await page.getByText("מוצרים במעקב").waitFor();
+  await page.getByText("יעד ₪120").waitFor();
+  await shot(page, "popup-watches");
+  await page.getByRole("button", { name: "הפסקת מעקב" }).click();
+  await page.getByText(/עוד אין מוצרים במעקב/).waitFor();
+  assert.equal(mock.state.watches.length, 0);
+  const violations = await runAxe(page, "popup-watches");
+  assert.deepEqual(violations, [], JSON.stringify(violations));
+  await page.close();
+});
+
+await check("settings: notification preferences are saved on the server and confirmed", async () => {
+  const page = await context.newPage();
+  await page.setViewportSize({ width: 800, height: 1000 });
+  await page.goto(env.extUrl("options.html"));
+  await page.getByRole("heading", { name: "על מה להתריע" }).waitFor();
+  await page.getByRole("switch", { name: "ירידה של אחוז שהגדרתי" }).click({ force: true });
+  await page.getByText("ההגדרה נשמרה.").waitFor();
+  assert.equal(mock.state.prefs.find((x) => x.kind === "price_drop").enabled, false);
+  await page.getByRole("switch", { name: "שעות שקטות" }).click({ force: true });
+  await page.getByText("ההגדרה נשמרה.").waitFor();
+  assert.deepEqual(mock.state.profileExtra.quiet_hours, { from: "22:00", to: "08:00" });
+  await shot(page, "options-notifications", { fullPage: true });
+  const violations = await runAxe(page, "options-notifications");
+  assert.deepEqual(violations, [], JSON.stringify(violations));
+  await page.close();
+});
+
 console.log("\nPopup, settings and welcome");
 
 await check("popup (signed in) shows the empty waiting list and the quiet-mode switch", async () => {
@@ -482,7 +568,7 @@ await check("settings page lists the store with its state and the account contro
   await page.setViewportSize({ width: 800, height: 900 });
   await page.goto(env.extUrl("options.html"));
   await page.getByRole("heading", { name: "הגדרות SmartBuy" }).waitFor();
-  await page.getByText("tester@example.invalid").waitFor();
+  await page.getByText("tester@example.invalid", { exact: true }).waitFor();
   const text = await page.locator("body").innerText();
   for (const expected of ["Terminal X", "ביטול גישה", "tester@example.invalid", "ייצוא המידע שלי", "מחיקת החשבון", "אין לו קשר לחנויות"]) assert.ok(text.includes(expected), `missing "${expected}"`);
   await shot(page, "options", { fullPage: true });
@@ -508,6 +594,19 @@ await check("no anonymous event carries both a product and an install or user id
   assert.ok(events.length > 0);
   for (const e of events.filter((x) => x.event === "product_view")) assert.equal(e.installId, undefined, "product_view must not carry an install id");
   assert.ok(events.some((e) => e.event === "first_product_view" && e.parentSku === undefined));
+});
+
+await check("viewing a product queues an anonymous price report that is sent in a batch", async () => {
+  const queued = await worker.evaluate(async () => ((await chrome.storage.session.get("priceQueue")).priceQueue ?? []).length);
+  const sentAlready = mock.state.priceReports.length;
+  assert.ok(queued > 0 || sentAlready > 0, "no price observation was queued");
+  const deadline = Date.now() + 90_000;
+  while (mock.state.priceReports.length === 0 && Date.now() < deadline) await new Promise((r) => setTimeout(r, 1000));
+  assert.ok(mock.state.priceReports.length > 0, "the batch was never sent");
+  const report = mock.state.priceReports[0];
+  assert.ok(typeof report.installId === "string" && report.installId.length > 0);
+  assert.ok(report.items.length > 0);
+  for (const item of report.items) assert.equal(item.userId, undefined, "price reports must not carry a user");
 });
 
 console.log("");

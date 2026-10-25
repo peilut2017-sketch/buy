@@ -1,5 +1,5 @@
 import { rest, type ReviewTarget } from "@smartbuy/data";
-import { AppealForm, Button, IconButton, Notice, ProductHeader, ReportForm, RequireAccount, ReviewsView, SignInCard, Skel, WriteFlow, useAuth, useResource, type SessionState } from "@smartbuy/ui";
+import { AppealForm, Button, IconButton, Notice, ProductHeader, ReportForm, RequireAccount, ReviewsView, Segmented, SignInCard, Skel, TrackingView, WriteFlow, useAuth, useResource, type SessionState } from "@smartbuy/ui";
 import type { ReviewView } from "@smartbuy/core";
 import { useEffect, useState } from "preact/hooks";
 import { boot, setTitle } from "../lib/boot.tsx";
@@ -82,6 +82,7 @@ function ProductPage() {
   const data = useResource(loadTarget, []);
   const [view, setView] = useState<View>({ name: "list" });
   const [version, setVersion] = useState(0);
+  const [tabName, setTabName] = useState<"reviews" | "tracking">("reviews");
 
   useEffect(() => {
     if (data.status === "ready" && data.data.target) setTitle(`ביקורות על ${data.data.target.name ?? data.data.target.sku}`);
@@ -132,6 +133,8 @@ function ProductPage() {
     content = <RequireAccount reason="כדי לערער צריך להתחבר.">{({ identity: id }) => <AppealForm review={view.review} identity={id} onClose={() => back(true)} />}</RequireAccount>;
   } else if (view.name === "signin") {
     content = <SignInView reason={view.reason} onDone={() => back(true)} />;
+  } else if (tabName === "tracking") {
+    content = <TrackingView target={target} identity={identity} getIdentity={getIdentity} version={version} onNeedSignIn={(reason) => setView({ name: "signin", reason })} />;
   } else {
     content = (
       <ReviewsView
@@ -155,7 +158,12 @@ function ProductPage() {
         {storeLink && <a class="sb-t-support" href={storeLink} rel="noopener noreferrer">לעמוד המוצר ב{target.siteName}</a>}
         {view.name !== "list" && <div><IconButton icon="arrow-back" iconFlip label="חזרה לביקורות" onClick={() => back()} /></div>}
       </div>
-      <div class="web__card">{content}</div>
+      {view.name === "list" && (
+        <div class="admin-tabs">
+          <Segmented label="תצוגה" value={tabName} onChange={setTabName} items={[{ id: "reviews", label: "ביקורות" }, { id: "tracking", label: "מחיר ומעקב" }]} />
+        </div>
+      )}
+      <div class="web__card" role={view.name === "list" ? "tabpanel" : undefined} id={view.name === "list" ? `sb-panel-${tabName}` : undefined} aria-labelledby={view.name === "list" ? `sb-tab-${tabName}` : undefined}>{content}</div>
     </Shell>
   );
 }

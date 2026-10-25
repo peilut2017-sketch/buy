@@ -27,7 +27,7 @@ export default defineConfig({
     description: "ביקורות אמינות ומעקב מחירים לאתרי קניות. שירות עצמאי, ללא קשר לחנויות.",
     minimum_chrome_version: "114",
     // Each permission has one stated purpose (docs/03-architecture.md, Chrome Web Store section).
-    permissions: ["storage", "sidePanel", "scripting", "identity"],
+    permissions: ["storage", "sidePanel", "scripting", "identity", "alarms", "notifications"],
     // Store domains are optional and requested at runtime, so adding a store never disables the extension for existing users.
     optional_host_permissions: sites.map((s) => s.hostPermission),
     host_permissions: [],

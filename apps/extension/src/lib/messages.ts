@@ -29,7 +29,7 @@ export interface SiteConfigResult {
   source: "remote" | "cache" | "bundled";
 }
 
-export type PanelMode = "reviews" | "write";
+export type PanelMode = "reviews" | "write" | "tracking";
 
 export interface DetectFailure {
   siteId: string;
@@ -44,6 +44,7 @@ interface Requests {
   "product-cleared": { req: Record<string, never>; res: { ok: true } };
   summary: { req: { siteId: string; parentSku: string }; res: { summary: ProductSummary | null } };
   "open-panel": { req: { mode: PanelMode }; res: { ok: boolean } };
+  "price-info": { req: { siteId: string; parentSku: string; sku: string }; res: { lowest: { price: number; since: string } | null } };
   "tab-product": { req: { tabId: number }; res: { product: ProductSnapshot | null; mode: PanelMode | null } };
   "detect-failed": { req: { failure: DetectFailure }; res: { ok: true } };
   "sync-content-scripts": { req: Record<string, never>; res: { registered: string[] } };

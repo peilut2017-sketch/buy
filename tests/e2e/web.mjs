@@ -192,6 +192,30 @@ await check("the account page shows the profile, my reviews and the data control
   await close(page);
 });
 
+await check("the product page's price tab shows history and saves a watch, and the account page lists and stops it", async () => {
+  mock.state.watches = [];
+  const page = await open("/terminalx/w817260002", { signedIn: true });
+  await page.waitForSelector(".sb-review");
+  await page.getByRole("tab", { name: "מחיר ומעקב" }).click();
+  await page.getByRole("img", { name: /גרף מחיר/ }).waitFor();
+  await shot(page, "product-tracking");
+  await page.getByLabel(/מחיר יעד/).fill("130");
+  await page.getByRole("button", { name: "שמירת מעקב" }).click();
+  await page.getByText("המעקב נשמר").waitFor();
+  assert.equal(mock.state.watches.length, 1);
+  await close(page);
+
+  const account = await open("/account", { signedIn: true });
+  await account.getByRole("heading", { name: "מוצרים במעקב" }).waitFor();
+  await account.getByText("יעד ₪130").waitFor();
+  await account.getByRole("heading", { name: "על מה להתריע" }).waitFor();
+  await shot(account, "account-tracking");
+  await account.getByRole("button", { name: "הפסקת מעקב" }).click();
+  await account.getByText(/עוד אין מוצרים במעקב/).waitFor();
+  assert.equal(mock.state.watches.length, 0);
+  await close(account);
+});
+
 await check("a review written on the website is sent as a web review, and shown as published only after the server answered", async () => {
   mock.state.myReview = null;
   mock.state.submit = "ok";

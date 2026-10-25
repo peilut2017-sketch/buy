@@ -22,7 +22,7 @@ expect(manifest.manifest_version === 3, "must be Manifest V3");
 expect(JSON.stringify(manifest.host_permissions ?? []) === "[]", `install must request no host access, got ${JSON.stringify(manifest.host_permissions)}`);
 expect(JSON.stringify(manifest.optional_host_permissions) === JSON.stringify([site.hostPermission]), "store hosts must be optional host permissions only");
 expect(!manifest.content_scripts, "content scripts must be registered at runtime, not in the manifest");
-expect(JSON.stringify([...manifest.permissions].sort()) === JSON.stringify(["identity", "scripting", "sidePanel", "storage"]), `unexpected permissions: ${manifest.permissions}`);
+expect(JSON.stringify([...manifest.permissions].sort()) === JSON.stringify(["alarms", "identity", "notifications", "scripting", "sidePanel", "storage"]), `unexpected permissions: ${manifest.permissions}`);
 expect(!manifest.web_accessible_resources, "nothing should be web accessible");
 for (const size of ["16", "32", "48", "128"]) expect(manifest.icons?.[size] && existsSync(join(out, manifest.icons[size])), `icon ${size} missing`);
 

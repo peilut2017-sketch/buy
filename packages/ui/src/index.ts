@@ -12,3 +12,7 @@ export * from "./reviews/AppealForm.tsx";
 export * from "./auth/context.tsx";
 export * from "./auth/AuthGate.tsx";
 export * from "./account/AccountPanels.tsx";
+export * from "./tracking/PriceChart.tsx";
+export * from "./tracking/TrackingView.tsx";
+export * from "./settings/NotificationSettings.tsx";
+export * from "./tracking/WatchList.tsx";

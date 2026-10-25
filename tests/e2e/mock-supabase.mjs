@@ -25,7 +25,20 @@ export function startMock(port) {
     takedowns: [{ id: 1, review_id: null, requester_name: "נציג מותג", requester_email: "legal@brand.test", reason: "פרטים שגויים על המוצר.", created_at: "2026-10-22T09:00:00Z" }],
     audit: [{ id: 1, action: "decide_report", target_type: "report", target_id: "9", created_at: "2026-10-20T09:00:00Z", details: { reason: "ספאם ברור" } }],
     siteStatus: "beta",
+    watches: [],
+    nextWatchId: 1,
+    prefs: ["price_target", "price_drop", "restock", "new_review_on_watch", "my_review_activity", "moderation_decision", "pending_review_reminder", "durability_reminder"].map((kind) => ({ kind, enabled: true, channels: ["extension"] })),
+    profileExtra: { quiet_hours: null, shabbat_mode: false, shabbat_city: null, daily_notification_cap: 3 },
+    priceReports: [],
   };
+  const DAY = 86_400_000;
+  /** SYNTHETIC price history, relative to now so it always falls inside the 90 day window. */
+  const history = () => [
+    { observed_at: new Date(Date.now() - 80 * DAY).toISOString(), price: 199.9, in_stock: true },
+    { observed_at: new Date(Date.now() - 40 * DAY).toISOString(), price: 169.9, in_stock: true },
+    { observed_at: new Date(Date.now() - 10 * DAY).toISOString(), price: 149.9, in_stock: true },
+  ];
+  const WATCH_PRODUCT = { name: "מכנסי בדיקה", url: "https://www.terminalx.com/w817260002", site_id: "terminalx", parent_sku: "w81726" };
   const COUNTS = { install: 12, product_view: 340, panel_open: 55, review_submitted: 9, detect_failed: 4 };
 
   const server = createServer(async (req, res) => {
@@ -66,8 +79,47 @@ export function startMock(port) {
       return send(200, [{ id: "terminalx" }]);
     }
     if (p === "/rest/v1/products") {
-      return send(200, q("parent_sku") === "w81726" ? [{ name: "מכנסי בדיקה", brand: "מותג בדיקה", image_url: "https://media.terminalx.com/pub/media/catalog/product/w/8/w817260002-1234567.jpg", url: "https://www.terminalx.com/w817260002", product_type: "apparel" }] : []);
+      return send(200, q("parent_sku") === "w81726" ? [{ id: 1, name: "מכנסי בדיקה", brand: "מותג בדיקה", image_url: "https://media.terminalx.com/pub/media/catalog/product/w/8/w817260002-1234567.jpg", url: "https://www.terminalx.com/w817260002", product_type: "apparel" }] : []);
     }
+    if (p === "/rest/v1/variants") return send(200, q("product_id") === "1" ? [{ id: 11 }] : []);
+    if (p === "/rest/v1/price_history") return send(200, q("variant_id") === "11" ? history() : []);
+    if (p === "/rest/v1/watches") {
+      if (req.method === "GET") {
+        const rows = state.watches.filter((w) => !url.searchParams.has("product_id") || String(w.product_id) === q("product_id"));
+        return send(200, url.searchParams.get("select")?.includes("products(") ? rows.map((w) => ({ ...w, products: WATCH_PRODUCT, variants: { sku: "w817260002" } })) : rows);
+      }
+      const input = JSON.parse(body || "{}");
+      if (req.method === "DELETE") {
+        const id = Number(q("id"));
+        state.watches = state.watches.filter((w) => w.id !== id);
+        return send(200, [{ id }]);
+      }
+      if (input.target_price != null && Number(input.target_price) >= 149.9) return send(400, { code: "23514", message: "target_price_must_be_below_current" });
+      if (req.method === "POST") {
+        if (state.watches.some((w) => w.product_id === input.product_id && w.variant_id === input.variant_id)) return send(409, { code: "23505", message: "duplicate key" });
+        const row = { id: state.nextWatchId++, user_id: ME, created_at: new Date().toISOString(), ...input };
+        state.watches.push(row);
+        return send(201, [row]);
+      }
+      const id = Number(q("id"));
+      state.watches = state.watches.map((w) => (w.id === id ? { ...w, ...input } : w));
+      return send(200, state.watches.filter((w) => w.id === id));
+    }
+    if (p === "/rest/v1/notification_prefs") {
+      if (req.method === "PATCH") {
+        const kind = q("kind");
+        const patch = JSON.parse(body || "{}");
+        state.prefs = state.prefs.map((x) => (x.kind === kind ? { ...x, ...patch } : x));
+        return send(200, [{ kind }]);
+      }
+      return send(200, state.prefs);
+    }
+    if (p === "/rest/v1/notification_channels") return send(200, []);
+    if (p === "/functions/v1/report-prices") {
+      state.priceReports.push(JSON.parse(body || "{}"));
+      return send(200, { accepted: 1 });
+    }
+    if (p === "/functions/v1/extension-notifications") return send(200, { notifications: [] });
     if (p === "/rest/v1/reports") return send(200, state.reports);
     if (p === "/rest/v1/appeals") return send(200, state.appeals);
     if (p === "/rest/v1/takedown_requests") return send(200, state.takedowns);
@@ -110,6 +162,11 @@ export function startMock(port) {
     if (p === "/rest/v1/profiles") {
       if (req.method === "PATCH") {
         const patch = JSON.parse(body || "{}");
+        const extra = Object.keys(patch).filter((k) => k in state.profileExtra);
+        if (extra.length > 0) {
+          for (const k of extra) state.profileExtra[k] = patch[k];
+          return send(200, [{ id: ME }]);
+        }
         if (patch.display_name === "תפוס") return send(409, { code: "23505", message: "duplicate key" });
         if (patch.display_name) state.nickname = patch.display_name;
         return send(200, [{ display_name: state.nickname, id: ME }]);
@@ -117,7 +174,7 @@ export function startMock(port) {
       if (url.searchParams.get("select")?.includes("created_at")) {
         return send(200, [{ id: ME, display_name: state.nickname, role: "user", blocked_at: null, created_at: "2026-09-01T09:00:00Z" }, { id: "00000000-0000-4000-8000-000000000001", display_name: "בודק_א", role: "user", blocked_at: null, created_at: "2026-09-02T09:00:00Z" }]);
       }
-      return send(200, [{ display_name: state.nickname, role: state.role, quiet_mode: false, order_check_consent: false, show_listing_stars: true }]);
+      return send(200, [{ display_name: state.nickname, role: state.role, quiet_mode: false, order_check_consent: false, show_listing_stars: true, ...state.profileExtra }]);
     }
     if (p === "/rest/v1/order_items") return send(200, []);
     if (p === "/rest/v1/pending_reviews") return send(200, state.pending);

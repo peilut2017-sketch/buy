@@ -5,7 +5,7 @@ import { send, type PanelMode, type ProductSnapshot, type SiteConfigResult } fro
 import type { RegisteredSite } from "../lib/sites.ts";
 import { isReportableFailure, readPage } from "./detect.ts";
 import { mountStrip, type MountedStrip } from "./mount.ts";
-import type { StripProps, StripState } from "./Strip.tsx";
+import type { StripPrice, StripProps, StripState } from "./Strip.tsx";
 
 /** Client-rendered pages may not have their markup ready at document_idle, so detection retries a few times. */
 const RETRY_DELAYS_MS = [0, 1_000, 3_000];
@@ -17,6 +17,7 @@ export class PageController {
   private reported = new Set<string>();
   private runId = 0;
   private config: SiteConfigResult | null = null;
+  private price: StripPrice | null = null;
   private handlers: Pick<StripProps, "onOpen" | "onClose" | "onRetry"> = { onOpen: () => undefined, onClose: () => undefined, onRetry: () => undefined };
 
   constructor(private readonly site: RegisteredSite, private readonly doc: Document, private readonly win: Window) {}
@@ -69,6 +70,7 @@ export class PageController {
     if (this.shown === product.sku && this.strip) return;
     this.clearStripOnly();
     this.shown = product.sku;
+    this.price = null;
     void send("product-detected", { product }).catch(() => undefined);
     if (this.dismissed.has(product.sku)) return;
 
@@ -80,8 +82,24 @@ export class PageController {
       },
       onRetry: () => void this.loadSummary(product, this.runId),
     };
-    this.strip = mountStrip(this.doc, { state: { kind: "loading" }, ...this.handlers });
+    this.strip = mountStrip(this.doc, { state: { kind: "loading" }, price: null, ...this.handlers });
+    void this.loadPrice(product, run);
     await this.loadSummary(product, run);
+  }
+
+  /** The price line is secondary: if it cannot be loaded the strip simply shows the current price and no history. */
+  private async loadPrice(product: ProductSnapshot, run: number): Promise<void> {
+    const current = product.price?.price ?? null;
+    this.price = { current, lowest: null };
+    this.redraw();
+    try {
+      const { lowest } = await send("price-info", { siteId: product.siteId, parentSku: product.parentSku, sku: product.sku });
+      if (run !== this.runId || this.shown !== product.sku) return;
+      this.price = { current, lowest };
+      this.redraw();
+    } catch {
+      /* keep the price without history */
+    }
   }
 
   private async loadSummary(product: ProductSnapshot, run: number): Promise<void> {
@@ -96,8 +114,15 @@ export class PageController {
     if (run === this.runId && this.shown === product.sku) this.setState(state);
   }
 
+  private state: StripState = { kind: "loading" };
+
   private setState(state: StripState): void {
-    this.strip?.update({ state, ...this.handlers });
+    this.state = state;
+    this.redraw();
+  }
+
+  private redraw(): void {
+    this.strip?.update({ state: this.state, price: this.price, ...this.handlers });
   }
 
   private clearStripOnly(): void {

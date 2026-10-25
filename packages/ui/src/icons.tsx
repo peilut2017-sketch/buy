@@ -22,6 +22,7 @@ const PATHS = {
   sliders: "M4 8h10M18 8h2M4 16h2M10 16h10M14 6v4M6 14v4",
   search: "M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM20 20l-4-4",
   refresh: "M20 11a8 8 0 1 0-2.3 5.7M20 5v6h-6",
+  bell: "M6 17V11a6 6 0 0 1 12 0v6l1.5 2h-15L6 17zM10 21h4",
   moon: "M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z",
 } as const;
 

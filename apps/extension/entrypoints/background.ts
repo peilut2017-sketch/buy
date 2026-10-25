@@ -3,10 +3,13 @@ import { browser } from "wxt/browser";
 import { defineBackground } from "wxt/utils/define-background";
 import { loadSiteConfig } from "../src/background/config.ts";
 import { installId, track, trackFirstViewOnce } from "../src/background/events.ts";
+import { FLUSH_ALARM, flushPrices, queuePrice } from "../src/background/prices.ts";
+import { POLL_ALARM, pollAndShow, registerNotificationClicks } from "../src/background/notifications.ts";
 import { syncContentScripts } from "../src/background/register.ts";
 import { WEBSITE_URL } from "../src/lib/env.ts";
 import type { Message, PanelMode, ProductSnapshot } from "../src/lib/messages.ts";
-import { getSummary } from "@smartbuy/data";
+import { getSummary, getTracking } from "@smartbuy/data";
+import { historyState, lowestInWindow } from "@smartbuy/core";
 import { getSession, removeSession, setSession } from "../src/lib/storage.ts";
 import { siteById } from "../src/lib/sites.ts";
 import type { ProductSummary } from "@smartbuy/core";
@@ -37,6 +40,12 @@ export default defineBackground(() => {
   void browser.sidePanel.setPanelBehavior({ openPanelOnActionClick: false });
   void browser.sidePanel.setOptions({ enabled: false });
   if (WEBSITE_URL) void browser.runtime.setUninstallURL(`${WEBSITE_URL}/bye`);
+  void browser.alarms.create(POLL_ALARM, { delayInMinutes: 1, periodInMinutes: 5 });
+  registerNotificationClicks();
+  browser.alarms.onAlarm.addListener((alarm) => {
+    if (alarm.name === POLL_ALARM) void pollAndShow();
+    if (alarm.name === FLUSH_ALARM) void flushPrices();
+  });
 
   browser.runtime.onInstalled.addListener(async (details) => {
     await installId();
@@ -69,6 +78,7 @@ export default defineBackground(() => {
           const state: TabState = { product: message.product, mode: null };
           await setSession(tabKey(tabId), state);
           await setPanelEnabled(tabId, true);
+          void queuePrice(message.product);
           void trackFirstViewOnce(message.product.siteId);
           void track({ event: "product_view", siteId: message.product.siteId, parentSku: message.product.parentSku });
           sendResponse({ ok: true });
@@ -91,6 +101,20 @@ export default defineBackground(() => {
           (summary) => sendResponse({ summary }),
           () => sendResponse({ summary: undefined, error: true }),
         );
+        return true;
+      }
+
+      case "price-info": {
+        void (async () => {
+          try {
+            const t = await getTracking({ siteId: message.siteId, parentSku: message.parentSku, sku: message.sku, token: null, userId: null });
+            const now = new Date();
+            const low = historyState(t.points, now).kind === "ok" ? lowestInWindow(t.points, now) : null;
+            sendResponse({ lowest: low ? { price: low.price, since: low.since.toISOString() } : null });
+          } catch {
+            sendResponse({ lowest: null });
+          }
+        })();
         return true;
       }
 

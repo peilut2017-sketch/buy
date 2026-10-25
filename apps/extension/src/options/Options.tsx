@@ -1,4 +1,4 @@
-import { AccountPanel, DataControls, QuietModeSwitch, Root, SignInCard, Skel } from "@smartbuy/ui";
+import { AccountPanel, DataControls, NotificationSettingsPanel, Root, SignInCard, Skel } from "@smartbuy/ui";
 import { useSession } from "../lib/auth.ts";
 import { BACKEND_CONFIGURED } from "../lib/env.ts";
 import { StoreList } from "./StoreList.tsx";
@@ -34,7 +34,7 @@ export function Options() {
 
         {session.status === "in" && (
           <>
-            <Section title="התראות"><QuietModeSwitch identity={session.identity} /></Section>
+            <Section title="התראות"><NotificationSettingsPanel identity={session.identity} /></Section>
             <Section title="הפרטיות שלכם"><DataControls identity={session.identity} /></Section>
           </>
         )}

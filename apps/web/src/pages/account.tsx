@@ -1,6 +1,6 @@
 import { formatDateHe } from "@smartbuy/core";
 import { ApiError, deleteReview, getPendingReviews, rest, type Identity, type PendingReview } from "@smartbuy/data";
-import { AccountPanel, Button, DataControls, Notice, QuietModeSwitch, RequireAccount, Skel, Stars, useResource } from "@smartbuy/ui";
+import { AccountPanel, Button, DataControls, Notice, NotificationSettingsPanel, RequireAccount, Skel, Stars, WatchList, useResource } from "@smartbuy/ui";
 import { useState } from "preact/hooks";
 import { boot } from "../lib/boot.tsx";
 import { Shell } from "../shell.tsx";
@@ -105,7 +105,8 @@ function Account() {
             <Section title="פרטים"><AccountPanel identity={identity} /></Section>
             <Section title="הביקורות שלי"><MyReviews identity={identity} /></Section>
             <Section title="ממתינים לביקורת"><Pending identity={identity} /></Section>
-            <Section title="התראות"><QuietModeSwitch identity={identity} /></Section>
+            <Section title="מוצרים במעקב"><WatchList identity={identity} productHref={(w) => `/${w.product.siteId}/${w.sku ?? w.product.parentSku}`} /></Section>
+            <Section title="התראות"><NotificationSettingsPanel identity={identity} /></Section>
             <Section title="הפרטיות שלכם"><DataControls identity={identity} /></Section>
           </>
         )}

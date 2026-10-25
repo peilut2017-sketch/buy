@@ -1,4 +1,4 @@
-import { Button, IconButton, Notice, Root, Skel, StarInput, Switch, SignInCard } from "@smartbuy/ui";
+import { Button, IconButton, Notice, Root, Skel, StarInput, Switch, SignInCard, WatchList } from "@smartbuy/ui";
 import { browser } from "wxt/browser";
 import { useState } from "preact/hooks";
 import { useSession, type Identity } from "../lib/auth.ts";
@@ -101,6 +101,11 @@ function SignedIn({ identity }: { identity: Identity }) {
             {pending.data.map((item) => <PendingItem key={item.orderItemId} item={item} identity={identity} onChanged={pending.reload} />)}
           </ul>
         )}
+      </section>
+      <hr class="sb-rule" />
+      <section class="sb-stack sb-gap-2" aria-labelledby="watch-h">
+        <h2 class="sb-t-heading" id="watch-h">מוצרים במעקב</h2>
+        <WatchList identity={identity} />
       </section>
       <hr class="sb-rule" />
       <section class="sb-stack sb-gap-2">
