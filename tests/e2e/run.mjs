@@ -635,8 +635,11 @@ await check("a category page gets a small rating on products with reviews only, 
 
   const options = await context.newPage();
   await options.goto(env.extUrl("options.html"));
+  await options.waitForFunction(() => document.querySelector("[role=switch]") && !document.querySelector("[role=switch]").disabled);
   await options.getByRole("switch", { name: "כוכבים ברשימות מוצרים" }).click({ force: true });
-  await options.waitForFunction(() => document.querySelector('[role=switch]')?.checked === false);
+  await options.waitForFunction(() => document.querySelector('[role=switch]')?.checked === false).catch(async (e) => {
+    throw new Error(`${e.message.split("\n")[0]} switches: ${JSON.stringify(await options.evaluate(() => [...document.querySelectorAll("[role=switch]")].map((s) => `${s.checked}:${s.getAttribute("aria-label") ?? s.closest("label")?.innerText?.slice(0, 25)}`)))}; text: ${(await options.locator("body").innerText()).slice(0, 300)}`);
+  });
   await options.close();
   const off = await context.newPage();
   await off.goto("https://www.terminalx.com/category/women");
@@ -646,6 +649,7 @@ await check("a category page gets a small rating on products with reviews only, 
 
   const back = await context.newPage();
   await back.goto(env.extUrl("options.html"));
+  await back.waitForFunction(() => document.querySelector("[role=switch]") && !document.querySelector("[role=switch]").disabled);
   await back.getByRole("switch", { name: "כוכבים ברשימות מוצרים" }).click({ force: true });
   await back.waitForFunction(() => document.querySelector('[role=switch]')?.checked === true);
   await back.close();
