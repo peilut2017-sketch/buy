@@ -111,6 +111,29 @@ await check("static pages exist, the legal ones carry the draft banner, and the 
   }
 });
 
+await check("the terms describe the automatic actions, and the account page asks for acceptance before tracking and sizes", async () => {
+  const terms = await open("/terms");
+  await terms.getByRole("heading", { name: "פעולות אוטומטיות בשמכם" }).waitFor();
+  const t = await text(terms);
+  for (const expected of ["קריאת עמודי מוצר", "בדיקת מחירים ומלאי של מוצרים במעקב", "קריאת עמוד ההזמנות שלכם", "אישור והמשך"]) assert.ok(t.includes(expected), `terms: missing "${expected}"`);
+  await close(terms);
+
+  mock.state.termsVersion = null;
+  const account = await open("/account", { signedIn: true });
+  try {
+  await account.getByRole("heading", { name: "תנאי שימוש" }).waitFor();
+  assert.equal(await account.getByRole("heading", { name: "מוצרים במעקב" }).count(), 0);
+  assert.equal(await account.getByRole("heading", { name: "הפרטיות שלכם" }).count(), 1, "export and deletion stay reachable without accepting");
+  await account.getByLabel("קראתי ואני מאשר/ת את תנאי השימוש").check();
+  await account.getByRole("button", { name: "אישור והמשך" }).click();
+  await account.getByRole("heading", { name: "מוצרים במעקב" }).waitFor();
+  assert.equal(mock.state.termsVersion, "2026-10-25");
+  } finally {
+    mock.state.termsVersion = "2026-10-25";
+    await close(account);
+  }
+});
+
 await check("the removal form validates, sends, and hides its bot trap from people", async () => {
   const page = await open("/takedown?review=1");
   await page.getByRole("button", { name: "שליחת הבקשה" }).waitFor();
@@ -182,6 +205,7 @@ console.log("\nSigned in");
 await check("the account page shows the profile, my reviews and the data controls, and deleting a review needs the server to agree", async () => {
   const page = await open("/account", { signedIn: true });
   await page.getByText("מכנסי בדיקה").first().waitFor();
+  await page.getByText("מצב שקט").first().waitFor();
   const t = await text(page);
   for (const expected of ["tester@example.invalid", "הביקורות שלי", "חולצת בדיקה", "דירוג בלי טקסט", "ממתינים לביקורת", "ייצוא המידע שלי", "מחיקת החשבון", "מצב שקט"]) assert.ok(t.includes(expected), `missing "${expected}"`);
   await shot(page, "account");

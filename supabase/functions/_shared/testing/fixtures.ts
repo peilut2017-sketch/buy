@@ -1,6 +1,7 @@
 // Synthetic users, products and a configured site for the handler tests. Nothing here is real data.
 import type { Ctx } from "../handlers/context.ts";
 import { createStore } from "../store.sql.ts";
+import { TERMS_VERSION } from "../terms.ts";
 import type { TestDb } from "./db.ts";
 
 export const BUNDLED_RULES = { parentSku: { fromSku: "^(.{6})" }, productType: "apparel" };
@@ -24,6 +25,8 @@ export async function seed(db: TestDb): Promise<void> {
   for (const [name, id] of Object.entries(USERS)) await raw`insert into auth.users (id, email) values (${id}, ${`${name}@test.invalid`})`;
   // The signup trigger created the profiles. Give everyone a nickname, and staff their roles.
   for (const [name, id] of Object.entries(USERS)) await raw`update public.profiles set display_name = ${`nick_${name}`} where id = ${id}`;
+  // Everyone has accepted the terms, so the handlers under test are not blocked by the consent step.
+  await raw`update public.profiles set terms_version = ${TERMS_VERSION}, terms_accepted_at = now()`;
   await raw`update public.profiles set role = 'moderator' where id = ${USERS.mia}`;
   await raw`update public.profiles set role = 'admin' where id = ${USERS.adam}`;
   await raw`update public.sites set adapter_config = ${raw.json(BUNDLED_RULES)}, status = 'beta' where id = 'terminalx'`;

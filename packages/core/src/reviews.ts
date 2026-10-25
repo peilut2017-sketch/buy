@@ -36,20 +36,42 @@ export interface ReviewFilters {
   /** Show only reviews written long after the purchase (stage "שימוש ממושך"). */
   longTermOnly: boolean;
   fit: "small" | "exact" | "large" | null;
+  /** Show only reviews of this colour (the value the buyer chose, for example "ורוד עתיק"). */
+  color: string | null;
 }
 
-export const NO_FILTERS: ReviewFilters = { rating: null, verifiedOnly: false, longTermOnly: false, fit: null };
+export const NO_FILTERS: ReviewFilters = { rating: null, verifiedOnly: false, longTermOnly: false, fit: null, color: null };
 
 export function activeFilterCount(filters: ReviewFilters): number {
-  return [filters.rating !== null, filters.verifiedOnly, filters.longTermOnly, filters.fit !== null].filter(Boolean).length;
+  return [filters.rating !== null, filters.verifiedOnly, filters.longTermOnly, filters.fit !== null, filters.color !== null].filter(Boolean).length;
 }
 
 export function stageOf(review: ReviewView): ReviewStage | null {
   return sincePurchase(review, review.writtenAt)?.stage ?? null;
 }
 
-export function filterReviews(reviews: readonly ReviewView[], filters: ReviewFilters): ReviewView[] {
+const sameColor = (a: string, b: string) => a.trim().toLowerCase() === b.trim().toLowerCase();
+
+/** The colours buyers chose, most reviewed first. `colorGroup` is the store's name for the colour option, from the adapter config. */
+export function reviewColors(reviews: readonly ReviewView[], colorGroup: string | null | undefined): { color: string; count: number }[] {
+  if (!colorGroup) return [];
+  const counts = new Map<string, { color: string; count: number }>();
+  for (const r of reviews) {
+    const color = r.variantValues[colorGroup]?.trim();
+    if (!color) continue;
+    const entry = counts.get(color.toLowerCase()) ?? { color, count: 0 };
+    entry.count++;
+    counts.set(color.toLowerCase(), entry);
+  }
+  return [...counts.values()].sort((a, b) => b.count - a.count || a.color.localeCompare(b.color, "he"));
+}
+
+export function filterReviews(reviews: readonly ReviewView[], filters: ReviewFilters, colorGroup?: string | null): ReviewView[] {
   return reviews.filter((r) => {
+    if (filters.color !== null && colorGroup) {
+      const chosen = r.variantValues[colorGroup];
+      if (!chosen || !sameColor(chosen, filters.color)) return false;
+    }
     if (filters.rating !== null && r.rating !== filters.rating) return false;
     if (filters.verifiedOnly && r.verification !== "verified") return false;
     if (filters.longTermOnly && stageOf(r) !== "long_term") return false;

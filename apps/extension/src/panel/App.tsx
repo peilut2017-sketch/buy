@@ -1,5 +1,5 @@
 import type { ReviewView } from "@smartbuy/core";
-import { AppealForm, Button, IconButton, Notice, ProductHeader, ReportForm, RequireAccount, ReviewsView, Root, Segmented, SignInCard, Skel, UpdateForm, TrackingView, WriteFlow } from "@smartbuy/ui";
+import { AppealForm, Button, IconButton, Notice, ProductHeader, ReportForm, RequireAccount, ReviewsView, RequireTerms, Root, Segmented, SignInCard, Skel, UpdateForm, TrackingView, WriteFlow } from "@smartbuy/ui";
 import { useEffect, useState } from "preact/hooks";
 import { currentIdentity, useSession } from "../lib/auth.ts";
 import { BACKEND_CONFIGURED } from "../lib/env.ts";
@@ -39,7 +39,7 @@ export function App() {
   const fromTab: ProductRef | null =
     tab.product && site ? { siteId: tab.product.siteId, siteName: site.name, sku: tab.product.sku, parentSku: tab.product.parentSku, snapshot: tab.product } : null;
   const product = manual ?? fromTab;
-  const target = product ? toTarget(product, site?.bundled.config.sizeGroup ?? null) : null;
+  const target = product ? toTarget(product, site?.bundled.config.sizeGroup ?? null, site?.bundled.config.colorGroup ?? null) : null;
   const productKey = product ? `${product.siteId}:${product.parentSku}` : "";
 
   // A different product, or a different tab, starts again at the list.
@@ -97,7 +97,7 @@ export function App() {
   } else if (view.name === "signin") {
     content = <SignInView reason={view.reason} onDone={() => backToList(true)} />;
   } else if (tabName === "tracking") {
-    content = (
+    const tracking = (
       <TrackingView
         target={target}
         identity={identity}
@@ -106,6 +106,7 @@ export function App() {
         onNeedSignIn={(reason) => setView({ name: "signin", reason })}
       />
     );
+    content = identity ? <RequireTerms identity={identity}>{tracking}</RequireTerms> : tracking;
   } else {
     content = (
       <ReviewsView

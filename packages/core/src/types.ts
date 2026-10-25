@@ -131,6 +131,8 @@ export interface AdapterConfig {
   productType: string;
   /** Name of the variant group that holds the size on this store, as the page shows it. Enables personal size advice. */
   sizeGroup?: string;
+  /** Name of the variant group that holds the colour. Enables the colour filter on reviews. */
+  colorGroup?: string;
 }
 
 /** A config together with its version (the `sites.adapter_version` column). */

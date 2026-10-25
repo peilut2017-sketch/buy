@@ -6,7 +6,7 @@ export interface PublicSite {
   name: string;
   status: "active" | "beta" | "paused";
   domains: string[];
-  adapterConfig: { productUrl?: string; parentSku?: { fromSku?: string }; productType?: string; sizeGroup?: string };
+  adapterConfig: { productUrl?: string; parentSku?: { fromSku?: string }; productType?: string; sizeGroup?: string; colorGroup?: string };
 }
 
 interface SiteRow {

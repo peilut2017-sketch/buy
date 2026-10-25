@@ -45,6 +45,8 @@ export interface ProfileRow {
   role: Role;
   blockedAt: string | null;
   orderCheckConsent: boolean;
+  /** The terms version this person accepted, or null if they have not accepted any. */
+  termsVersion: string | null;
 }
 
 export interface ProductRow {
@@ -176,6 +178,7 @@ export interface Store {
   getSettings(): Promise<Settings>;
   getSite(id: string): Promise<SiteRow | null>;
   getProfile(userId: string): Promise<ProfileRow | null>;
+  acceptTerms(userId: string, version: string, now: string): Promise<void>;
   getRequiredQuestionKeys(productType: string): Promise<string[]>;
 
   upsertProduct(input: { siteId: string; parentSku: string; name: string | null; brand: string | null; imageUrl: string | null; url: string | null; productType: string; now: string }): Promise<ProductRow>;

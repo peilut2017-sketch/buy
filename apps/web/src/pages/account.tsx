@@ -1,6 +1,6 @@
 import { formatDateHe } from "@smartbuy/core";
 import { ApiError, deleteReview, getPendingReviews, rest, type Identity, type PendingReview } from "@smartbuy/data";
-import { AccountPanel, Button, DataControls, Notice, NotificationSettingsPanel, SizeProfilePanel, RequireAccount, Skel, Stars, WatchList, useResource } from "@smartbuy/ui";
+import { AccountPanel, Button, DataControls, Notice, NotificationSettingsPanel, SizeProfilePanel, RequireAccount, RequireTerms, Skel, Stars, WatchList, useResource } from "@smartbuy/ui";
 import { useState } from "preact/hooks";
 import { boot } from "../lib/boot.tsx";
 import { Shell } from "../shell.tsx";
@@ -99,15 +99,17 @@ function Account() {
   return (
     <Shell active="account">
       <h1 class="sb-t-name" style={{ fontSize: "24px", lineHeight: "30px" }}>החשבון שלי</h1>
-      <RequireAccount reason="כדי לראות את החשבון צריך להתחבר.">
+      <RequireAccount reason="כדי לראות את החשבון צריך להתחבר." terms={false}>
         {({ identity }) => (
           <>
             <Section title="פרטים"><AccountPanel identity={identity} /></Section>
             <Section title="הביקורות שלי"><MyReviews identity={identity} /></Section>
             <Section title="ממתינים לביקורת"><Pending identity={identity} /></Section>
+            <RequireTerms identity={identity}>
             <Section title="מוצרים במעקב"><WatchList identity={identity} productHref={(w) => `/${w.product.siteId}/${w.sku ?? w.product.parentSku}`} /></Section>
             <Section title="התראות"><NotificationSettingsPanel identity={identity} /></Section>
             <Section title="המידות שלי"><SizeProfilePanel identity={identity} /></Section>
+            </RequireTerms>
             <Section title="הפרטיות שלכם"><DataControls identity={identity} /></Section>
           </>
         )}

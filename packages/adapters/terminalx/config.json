@@ -21,5 +21,6 @@
   "listing": { "card": "li[class*='listing-product']", "link": "a[data-test-id='qa-product-link']" },
   "emailDomains": ["terminalx.com"],
   "productType": "apparel",
-  "sizeGroup": "מידה"
+  "sizeGroup": "מידה",
+  "colorGroup": "צבע"
 }

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "preact/hooks";
-import { AccountPanel, DataControls, NotificationSettingsPanel, SizeProfilePanel, Root, SignInCard, Skel, Switch } from "@smartbuy/ui";
+import { AccountPanel, DataControls, NotificationSettingsPanel, SizeProfilePanel, Root, SignInCard, Skel, Switch, RequireTerms } from "@smartbuy/ui";
 import { useSession } from "../lib/auth.ts";
 import { BACKEND_CONFIGURED } from "../lib/env.ts";
 import { LISTING_SETTING } from "../lib/settings.ts";
@@ -63,8 +63,10 @@ export function Options() {
 
         {session.status === "in" && (
           <>
-            <Section title="התראות"><NotificationSettingsPanel identity={session.identity} /></Section>
-            <Section title="המידות שלי"><SizeProfilePanel identity={session.identity} /></Section>
+            <RequireTerms identity={session.identity}>
+              <Section title="התראות"><NotificationSettingsPanel identity={session.identity} /></Section>
+              <Section title="המידות שלי"><SizeProfilePanel identity={session.identity} /></Section>
+            </RequireTerms>
             <Section title="הפרטיות שלכם"><DataControls identity={session.identity} /></Section>
           </>
         )}

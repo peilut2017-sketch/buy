@@ -37,6 +37,7 @@ function useSession(): SessionState {
 
 export const webAuth: AuthApi = {
   configured: BACKEND_CONFIGURED,
+  termsUrl: "/terms",
   useSession,
   async signInWithGoogle() {
     const { error } = await sb().auth.signInWithOAuth({ provider: "google", options: { redirectTo: `${location.origin}${location.pathname}${location.search}` } });

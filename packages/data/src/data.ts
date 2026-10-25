@@ -213,6 +213,8 @@ export interface Profile {
   quietMode: boolean;
   orderCheckConsent: boolean;
   showListingStars: boolean;
+  /** The version of the terms of use this person accepted, or null. */
+  termsVersion: string | null;
 }
 
 interface ProfileRow {
@@ -220,15 +222,16 @@ interface ProfileRow {
   quiet_mode: boolean;
   order_check_consent: boolean;
   show_listing_stars: boolean;
+  terms_version: string | null;
 }
 
 export async function getProfile(token: string, userId: string): Promise<Profile | null> {
   const rows = await rest<ProfileRow[]>("profiles", {
-    params: { id: `eq.${userId}`, select: "display_name,quiet_mode,order_check_consent,show_listing_stars" },
+    params: { id: `eq.${userId}`, select: "display_name,quiet_mode,order_check_consent,show_listing_stars,terms_version" },
     token,
   });
   const r = rows[0];
-  return r ? { displayName: r.display_name, quietMode: r.quiet_mode, orderCheckConsent: r.order_check_consent, showListingStars: r.show_listing_stars } : null;
+  return r ? { displayName: r.display_name, quietMode: r.quiet_mode, orderCheckConsent: r.order_check_consent, showListingStars: r.show_listing_stars, termsVersion: r.terms_version } : null;
 }
 
 export class NicknameTakenError extends Error {}
@@ -400,4 +403,10 @@ export async function getListingSummaries(siteId: string, parentSkus: readonly s
     params: { site_id: `eq.${siteId}`, parent_sku: `in.(${skus.join(",")})`, reviews_count: "gt.0", select: "parent_sku,reviews_count,rating_avg", limit: LISTING_MAX },
   });
   return rows.filter((r) => r.rating_avg !== null).map((r) => ({ parentSku: r.parent_sku, reviewsCount: Number(r.reviews_count), ratingAvg: Number(r.rating_avg) }));
+}
+
+
+/** Records that the person accepted this version of the terms. The server keeps the time and refuses an outdated version. */
+export function acceptTerms(token: string, version: string): Promise<{ version: string }> {
+  return callFunction<{ version: string }>("accept-terms", { version }, token);
 }

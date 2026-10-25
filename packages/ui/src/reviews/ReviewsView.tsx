@@ -8,6 +8,7 @@ import {
   filterReviews,
   fitMeter,
   formatRating,
+  reviewColors,
   sizeAdvice,
   sortReviews,
   type ReviewFilters,
@@ -103,8 +104,11 @@ export function ReviewsView({ target, identity, getIdentity, version, onWrite, o
   const { summary, result, usualSize } = data.data;
   const advice = usualSize ? sizeAdvice(result.reviews, usualSize, target.sizeGroup) : null;
   const all = result.reviews.filter((r) => !layer.removed.has(r.id)).map((r) => ({ ...r, ...layer.patches.get(r.id) }));
-  const shown = sortReviews(filterReviews(all, filters), sort);
+  const shown = sortReviews(filterReviews(all, filters, target.colorGroup), sort);
   const filterCount = activeFilterCount(filters);
+  const colors = reviewColors(all, target.colorGroup);
+  const pageColor = target.colorGroup ? target.variantValues[target.colorGroup] ?? null : null;
+  const pageColorKnown = pageColor !== null && colors.some((c) => c.color.toLowerCase() === pageColor.toLowerCase());
   const meter = summary ? fitMeter({ small: summary.fitSmall, exact: summary.fitExact, large: summary.fitLarge }) : null;
   const patch = (id: number, change: Partial<ReviewView>) =>
     setLocal({ version, patches: new Map(layer.patches).set(id, { ...layer.patches.get(id), ...change }), removed: layer.removed });
@@ -172,6 +176,14 @@ export function ReviewsView({ target, identity, getIdentity, version, onWrite, o
           <CompactSelect label="סינון לפי דירוג" value={filters.rating === null ? "" : String(filters.rating)} onChange={(v) => setFilters({ ...filters, rating: v ? Number(v) : null })} options={RATING_OPTIONS} placeholder="כל הדירוגים" />
           <CompactSelect label="סינון לפי התאמת מידה" value={filters.fit ?? ""} onChange={(v) => setFilters({ ...filters, fit: (v || null) as ReviewFilters["fit"] })} options={FIT_OPTIONS} placeholder="כל ההתאמות" />
           <CompactSelect label="מיון" value={sort} onChange={(v) => setSort(v as SortMode)} options={Object.entries(SORT_LABEL).map(([value, label]) => ({ value, label }))} />
+          {colors.length > 1 && (
+            <CompactSelect label="סינון לפי צבע" value={filters.color ?? ""} onChange={(v) => setFilters({ ...filters, color: v || null })} options={colors.map((c) => ({ value: c.color, label: `${c.color} (${c.count})` }))} placeholder="כל הצבעים" />
+          )}
+          {pageColorKnown && pageColor && (
+            <button type="button" class="toggle-chip" aria-pressed={filters.color?.toLowerCase() === pageColor.toLowerCase()} onClick={() => setFilters({ ...filters, color: filters.color?.toLowerCase() === pageColor.toLowerCase() ? null : pageColor })}>
+              רק הצבע שבעמוד
+            </button>
+          )}
           <button type="button" class="toggle-chip" aria-pressed={filters.verifiedOnly} onClick={() => setFilters({ ...filters, verifiedOnly: !filters.verifiedOnly })}>רק מאומתות</button>
           <button type="button" class="toggle-chip" aria-pressed={filters.longTermOnly} onClick={() => setFilters({ ...filters, longTermOnly: !filters.longTermOnly })}>שימוש ממושך</button>
           {filterCount > 0 && <Button variant="quiet" small onClick={() => setFilters(NO_FILTERS)}>ניקוי סינון ({filterCount})</Button>}

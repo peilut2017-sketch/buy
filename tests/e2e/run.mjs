@@ -261,6 +261,19 @@ await check("filters narrow the list, show a count, and clear", async () => {
   await panel.close();
 });
 
+await check("reviews can be filtered by colour, with a count per colour", async () => {
+  const { product, panel } = await openPanel("w817260002");
+  await panel.waitForSelector(".sb-review");
+  const select = panel.getByLabel("סינון לפי צבע");
+  await select.selectOption({ label: "אדום (1)" });
+  await panel.waitForFunction(() => document.querySelectorAll(".sb-review").length === 1);
+  assert.ok((await panel.locator(".sb-review").innerText()).includes("שימוש ממושך"));
+  await panel.getByRole("button", { name: /ניקוי סינון/ }).click();
+  await panel.waitForFunction(() => document.querySelectorAll(".sb-review").length === 3);
+  await product.close();
+  await panel.close();
+});
+
 await check("acting without an account asks for sign-in instead of failing", async () => {
   const { product, panel } = await openPanel("w817260002");
   await panel.waitForSelector(".sb-review");
@@ -668,6 +681,30 @@ await check("popup lists a product waiting for a review and saves a quick rating
   assert.equal(sent.rating, 4);
   await shot(page, "popup-pending");
   mock.state.pending = [];
+  await page.close();
+});
+
+await check("someone who has not accepted the terms sees them first, and nothing is saved until the server confirmed the acceptance", async () => {
+  mock.state.termsVersion = null;
+  const page = await context.newPage();
+  await page.setViewportSize({ width: 360, height: 640 });
+  await page.goto(env.extUrl("popup.html"));
+  await page.getByRole("heading", { name: "תנאי שימוש" }).waitFor();
+  const text = await page.locator("body").innerText();
+  for (const expected of ["בודק מחירים ומלאי", "קורא את עמוד ההזמנות", "גיבוב של מספר ההזמנה"]) assert.ok(text.includes(expected), `missing "${expected}"`);
+  assert.equal(await page.getByText("ממתינים לביקורת").count(), 0, "the signed-in content must wait for the acceptance");
+  await shot(page, "popup-terms");
+  const violations = await runAxe(page, "popup-terms");
+  assert.deepEqual(violations, [], JSON.stringify(violations));
+
+  await page.getByRole("button", { name: "אישור והמשך" }).click();
+  await page.getByText("כדי להמשיך צריך לאשר").waitFor();
+  assert.equal(mock.state.termsVersion, null);
+
+  await page.getByLabel("קראתי ואני מאשר/ת את תנאי השימוש").check();
+  await page.getByRole("button", { name: "אישור והמשך" }).click();
+  await page.getByText("ממתינים לביקורת").waitFor();
+  assert.equal(mock.state.termsVersion, "2026-10-25");
   await page.close();
 });
 

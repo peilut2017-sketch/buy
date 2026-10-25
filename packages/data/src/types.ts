@@ -29,6 +29,8 @@ export interface ReviewTarget {
   variantOptions: VariantOption[];
   /** The variant group that holds the size on this store (adapter config). Without it there is no personal size advice. */
   sizeGroup?: string | null;
+  /** The variant group that holds the colour on this store (adapter config). Enables the colour filter. */
+  colorGroup?: string | null;
   /** Where a review is written: the extension can later verify it from orders, the website marks it as pending. */
   source: "extension" | "web";
 }

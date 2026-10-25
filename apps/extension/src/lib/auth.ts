@@ -6,7 +6,7 @@ import { browser } from "wxt/browser";
 import { AuthError, type AuthApi, type SessionState } from "@smartbuy/ui";
 import type { Identity } from "@smartbuy/data";
 import { useEffect, useState } from "preact/hooks";
-import { BACKEND_CONFIGURED, SUPABASE_ANON_KEY, SUPABASE_URL } from "./env.ts";
+import { BACKEND_CONFIGURED, SUPABASE_ANON_KEY, SUPABASE_URL, WEBSITE_URL } from "./env.ts";
 import { NotConfiguredError } from "@smartbuy/data";
 
 const extensionStorage = {
@@ -108,6 +108,7 @@ export type { Identity, SessionState };
 /** What the shared sign-in screens use in the extension. */
 export const extensionAuth: AuthApi = {
   configured: BACKEND_CONFIGURED,
+  termsUrl: WEBSITE_URL ? `${WEBSITE_URL}/terms` : null,
   useSession,
   signInWithGoogle,
   requestEmailCode,

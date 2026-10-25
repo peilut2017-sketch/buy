@@ -25,6 +25,7 @@ export function startMock(port) {
     takedowns: [{ id: 1, review_id: null, requester_name: "נציג מותג", requester_email: "legal@brand.test", reason: "פרטים שגויים על המוצר.", created_at: "2026-10-22T09:00:00Z" }],
     audit: [{ id: 1, action: "decide_report", target_type: "report", target_id: "9", created_at: "2026-10-20T09:00:00Z", details: { reason: "ספאם ברור" } }],
     siteStatus: "beta",
+    termsVersion: "2026-10-25",
     watches: [],
     updates: [],
     sizeProfile: [],
@@ -202,7 +203,7 @@ export function startMock(port) {
       if (url.searchParams.get("select")?.includes("created_at")) {
         return send(200, [{ id: ME, display_name: state.nickname, role: "user", blocked_at: null, created_at: "2026-09-01T09:00:00Z" }, { id: "00000000-0000-4000-8000-000000000001", display_name: "בודק_א", role: "user", blocked_at: null, created_at: "2026-09-02T09:00:00Z" }]);
       }
-      return send(200, [{ display_name: state.nickname, role: state.role, quiet_mode: false, order_check_consent: false, show_listing_stars: true, ...state.profileExtra }]);
+      return send(200, [{ display_name: state.nickname, role: state.role, quiet_mode: false, order_check_consent: false, show_listing_stars: true, terms_version: state.termsVersion, ...state.profileExtra }]);
     }
     if (p === "/rest/v1/order_items") return send(200, []);
     if (p === "/rest/v1/pending_reviews") return send(200, state.pending);
@@ -210,6 +211,12 @@ export function startMock(port) {
     if (p === "/functions/v1/events") return send(200, { ok: true });
     if (p === "/functions/v1/report-review") return send(200, { ok: true });
     if (p === "/functions/v1/appeal-review") return send(200, { ok: true });
+    if (p === "/functions/v1/accept-terms") {
+      const input = JSON.parse(body || "{}");
+      if (input.version !== "2026-10-25") return send(409, { message: "תנאי השימוש התעדכנו." });
+      state.termsVersion = input.version;
+      return send(200, { version: input.version });
+    }
     if (p === "/functions/v1/review-update") {
       if (state.updateFails) return send(500, { message: "boom" });
       state.updates.push(JSON.parse(body || "{}"));

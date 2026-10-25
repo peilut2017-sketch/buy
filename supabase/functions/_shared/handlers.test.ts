@@ -1,6 +1,7 @@
 // Integration tests of the Edge Function handlers against a real PostgreSQL with the real migration.
 // Skipped unless SB_TEST_DB_URL is set (see testing/db.ts). Run: SB_TEST_DB_URL=postgres://postgres@127.0.0.1:5432/postgres pnpm test
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { acceptTerms } from "./handlers/acceptTerms.ts";
 import { appealReview } from "./handlers/appealReview.ts";
 import { deleteMyAccount, exportMyData } from "./handlers/account.ts";
 import { events } from "./handlers/events.ts";
@@ -10,6 +11,7 @@ import { reviewUpdate } from "./handlers/reviewUpdate.ts";
 import { submitReview } from "./handlers/submitReview.ts";
 import { takedownRequest } from "./handlers/takedown.ts";
 import { verifyOrders } from "./handlers/verifyOrders.ts";
+import { TERMS_VERSION } from "./terms.ts";
 import { createTestDb, TEST_DB_URL, type TestDb } from "./testing/db.ts";
 import { ctxFor, deleted, NOW, REVIEW_TEXT, reviewBody, seed, USERS } from "./testing/fixtures.ts";
 
@@ -33,6 +35,44 @@ describe.skipIf(!TEST_DB_URL)("Edge Function handlers on PostgreSQL", () => {
 
   const submit = (who: Parameters<typeof ctxFor>[1], body: unknown) => submitReview(ctxFor(db, who), body);
   const reviewIdOf = (res: { body: unknown }) => (res.body as { reviewId: number }).reviewId;
+
+  describe("terms of use", () => {
+    afterEach(async () => {
+      await db.raw`update public.profiles set terms_version = ${TERMS_VERSION}, terms_accepted_at = now()`;
+    });
+
+    it("blocks every write until the current terms are accepted, but not export or deletion of one's own data", async () => {
+      await db.raw`update public.profiles set terms_version = null, terms_accepted_at = null where id = ${USERS.alice}`;
+      const blocked = await submit("alice", reviewBody());
+      expect(blocked).toMatchObject({ status: 403, body: { errors: { terms: "required" } } });
+      expect((await reportReview(ctxFor(db, "alice"), { reviewId: 1, reason: "spam" })).status).toBe(403);
+      expect((await exportMyData(ctxFor(db, "alice"), {})).status).toBe(200);
+    });
+
+    it("records the version and the time, refuses an older version, and then lets the person write", async () => {
+      await db.raw`update public.profiles set terms_version = null, terms_accepted_at = null where id = ${USERS.alice}`;
+      expect((await acceptTerms(ctxFor(db, null), { version: TERMS_VERSION })).status).toBe(401);
+      expect((await acceptTerms(ctxFor(db, "alice"), { version: "2020-01-01" })).status).toBe(409);
+      expect((await db.raw`select terms_version from public.profiles where id = ${USERS.alice}`)[0]!.terms_version).toBeNull();
+
+      expect((await acceptTerms(ctxFor(db, "alice"), { version: TERMS_VERSION })).status).toBe(200);
+      const [row] = await db.raw`select terms_version, terms_accepted_at from public.profiles where id = ${USERS.alice}`;
+      expect(row).toMatchObject({ terms_version: TERMS_VERSION });
+      expect(new Date(row!.terms_accepted_at).toISOString()).toBe(NOW.toISOString());
+      expect((await submit("alice", reviewBody())).status).toBe(200);
+    });
+
+    it("asks again after the terms change", async () => {
+      await db.raw`update public.profiles set terms_version = '2020-01-01' where id = ${USERS.alice}`;
+      expect((await submit("alice", reviewBody())).status).toBe(403);
+    });
+
+    it("cannot be forged by the client: the columns are not in the update grant", async () => {
+      await db.raw`update public.profiles set terms_version = null where id = ${USERS.bob}`;
+      const grants = await db.raw`select has_column_privilege('authenticated', 'public.profiles', 'terms_version', 'UPDATE') as can`;
+      expect(grants[0]!.can).toBe(false);
+    });
+  });
 
   describe("submit-review", () => {
     it("needs a signed-in, unblocked user with a nickname", async () => {
@@ -349,7 +389,7 @@ describe.skipIf(!TEST_DB_URL)("Edge Function handlers on PostgreSQL", () => {
       const [e] = await db.raw`select user_id from public.events where event = 'review_submitted' and product_id is not null order by id limit 1`;
       expect(e!.user_id).toBeNull(); // detached, not deleted
       await db.raw`insert into auth.users (id, email) values (${USERS.alice}, 'alice@test.invalid')`;
-      await db.raw`update public.profiles set display_name = 'nick_alice' where id = ${USERS.alice}`;
+      await db.raw`update public.profiles set display_name = 'nick_alice', terms_version = ${TERMS_VERSION}, terms_accepted_at = now() where id = ${USERS.alice}`;
     });
   });
 

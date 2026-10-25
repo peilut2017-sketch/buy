@@ -1,5 +1,5 @@
 import { rest, type ReviewTarget } from "@smartbuy/data";
-import { AppealForm, Button, IconButton, Notice, ProductHeader, ReportForm, RequireAccount, ReviewsView, Segmented, SignInCard, Skel, UpdateForm, TrackingView, WriteFlow, useAuth, useResource, type SessionState } from "@smartbuy/ui";
+import { AppealForm, Button, IconButton, Notice, ProductHeader, ReportForm, RequireAccount, RequireTerms, ReviewsView, Segmented, SignInCard, Skel, UpdateForm, TrackingView, WriteFlow, useAuth, useResource, type SessionState } from "@smartbuy/ui";
 import type { ReviewView } from "@smartbuy/core";
 import { useEffect, useState } from "preact/hooks";
 import { boot, setTitle } from "../lib/boot.tsx";
@@ -63,6 +63,7 @@ async function loadTarget(): Promise<{ target: ReviewTarget | null; sites: Publi
       variantValues: {},
       variantOptions: [],
       sizeGroup: found.site.adapterConfig.sizeGroup ?? null,
+      colorGroup: found.site.adapterConfig.colorGroup ?? null,
       source: "web",
     },
   };
@@ -138,7 +139,8 @@ function ProductPage() {
   } else if (view.name === "signin") {
     content = <SignInView reason={view.reason} onDone={() => back(true)} />;
   } else if (tabName === "tracking") {
-    content = <TrackingView target={target} identity={identity} getIdentity={getIdentity} version={version} onNeedSignIn={(reason) => setView({ name: "signin", reason })} />;
+    const tracking = <TrackingView target={target} identity={identity} getIdentity={getIdentity} version={version} onNeedSignIn={(reason) => setView({ name: "signin", reason })} />;
+    content = identity ? <RequireTerms identity={identity}>{tracking}</RequireTerms> : tracking;
   } else {
     content = (
       <ReviewsView

@@ -11,6 +11,8 @@ export class AuthError extends Error {}
 export interface AuthApi {
   /** False when the build has no backend, so screens can say so instead of failing. */
   configured: boolean;
+  /** Where the terms of use can be read, or null when the build has no website address. */
+  termsUrl: string | null;
   useSession(): SessionState;
   signInWithGoogle(): Promise<void>;
   requestEmailCode(email: string): Promise<void>;

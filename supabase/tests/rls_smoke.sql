@@ -12,6 +12,7 @@ insert into auth.users (id, email) values
   ('b0000000-0000-0000-0000-000000000002', 'bob@test.invalid'),
   ('c0000000-0000-0000-0000-000000000003', 'mia@test.invalid'),
   ('d0000000-0000-0000-0000-000000000004', 'adam@test.invalid');
+update public.profiles set terms_version = 'test', terms_accepted_at = now() where id <> 'b0000000-0000-0000-0000-000000000002';
 update public.profiles set role = 'moderator' where id = 'c0000000-0000-0000-0000-000000000003';
 update public.profiles set role = 'admin' where id = 'd0000000-0000-0000-0000-000000000004';
 
@@ -478,6 +479,39 @@ begin
   perform set_config('request.jwt.claim.sub', adam::text, true);
   set local role authenticated;
   assert (select count(*) from public.events) = 0, 'a blocked admin has no admin rights';
+  reset role;
+end $$;
+
+-- ---------------------------------------------------------------- terms of use (0005)
+do $$
+declare
+  bob   constant uuid := 'b0000000-0000-0000-0000-000000000002';
+  alice constant uuid := 'a0000000-0000-0000-0000-000000000001';
+  ok boolean;
+begin
+  -- bob never accepted the terms in this test; alice did.
+  perform set_config('request.jwt.claim.sub', bob::text, true);
+  set local role authenticated;
+  begin
+    insert into public.watches (user_id, product_id, notify_restock) values (bob, 3, true);
+    ok := true;
+  exception when insufficient_privilege or check_violation then
+    ok := false;
+  end;
+  assert not ok, 'a person who has not accepted the terms cannot create a watch';
+  assert not (select terms_version is not null from public.profiles where id = bob), 'bob has not accepted';
+  begin
+    update public.profiles set terms_version = 'forged' where id = bob;
+    ok := true;
+  exception when insufficient_privilege then
+    ok := false;
+  end;
+  assert not ok, 'terms_version cannot be written by the client';
+  reset role;
+
+  perform set_config('request.jwt.claim.sub', alice::text, true);
+  set local role authenticated;
+  assert public.has_accepted_terms(), 'alice accepted';
   reset role;
 end $$;
 

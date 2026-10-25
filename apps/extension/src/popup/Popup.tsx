@@ -1,4 +1,4 @@
-import { Button, IconButton, Notice, Root, Skel, StarInput, Switch, SignInCard, WatchList } from "@smartbuy/ui";
+import { Button, IconButton, Notice, Root, Skel, StarInput, Switch, SignInCard, WatchList, RequireTerms } from "@smartbuy/ui";
 import { browser } from "wxt/browser";
 import { useState } from "preact/hooks";
 import { useSession, type Identity } from "../lib/auth.ts";
@@ -132,7 +132,7 @@ export function Popup() {
         ) : session.status === "out" ? (
           <SignInCard reason="כדי לראות ביקורות שממתינות לכם צריך להתחבר." />
         ) : (
-          <SignedIn identity={session.identity} />
+          <RequireTerms identity={session.identity}><SignedIn identity={session.identity} /></RequireTerms>
         )}
       </main>
       <footer class="panel__footer">SmartBuy הוא שירות עצמאי ואין לו קשר לחנויות.</footer>

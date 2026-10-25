@@ -103,10 +103,14 @@ export function createStore(sql: Sql, options: StoreOptions): Store {
     },
 
     async getProfile(userId): Promise<ProfileRow | null> {
-      const [r] = await sql`select id, display_name, role, blocked_at, order_check_consent from public.profiles where id = ${userId}`;
+      const [r] = await sql`select id, display_name, role, blocked_at, order_check_consent, terms_version from public.profiles where id = ${userId}`;
       return r
-        ? { id: r.id, displayName: r.display_name, role: r.role, blockedAt: r.blocked_at ? iso(r.blocked_at) : null, orderCheckConsent: r.order_check_consent }
+        ? { id: r.id, displayName: r.display_name, role: r.role, blockedAt: r.blocked_at ? iso(r.blocked_at) : null, orderCheckConsent: r.order_check_consent, termsVersion: r.terms_version }
         : null;
+    },
+
+    async acceptTerms(userId, version, now) {
+      await sql`update public.profiles set terms_accepted_at = ${now}, terms_version = ${version} where id = ${userId}`;
     },
 
     async getRequiredQuestionKeys(productType) {

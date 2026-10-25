@@ -13,4 +13,5 @@ export * from "../../../supabase/functions/_shared/moderation.ts";
 export * from "../../../supabase/functions/_shared/orders.ts";
 export * from "./lookup.ts";
 export * from "../../../supabase/functions/_shared/shabbat.ts";
+export * from "../../../supabase/functions/_shared/terms.ts";
 export * from "./size.ts";

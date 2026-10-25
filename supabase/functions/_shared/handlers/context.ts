@@ -3,6 +3,7 @@ import { BLOCKED, UNAUTHENTICATED, fail } from "../http.ts";
 import type { HebcalLike } from "../shabbat.ts";
 import type { Senders } from "../senders.ts";
 import type { ProfileRow, Store } from "../store.ts";
+import { TERMS_VERSION } from "../terms.ts";
 
 export interface Ctx {
   /** The signed-in user, from a verified token. Null for anonymous calls. */
@@ -26,11 +27,12 @@ export interface Ctx {
 export type Handler = (ctx: Ctx, body: unknown) => Promise<HttpResult>;
 
 /** The signed-in, unblocked user's profile, or the response to send instead. */
-export async function requireProfile(ctx: Ctx, opts: { nickname?: boolean } = {}): Promise<{ profile: ProfileRow } | { response: HttpResult }> {
+export async function requireProfile(ctx: Ctx, opts: { nickname?: boolean; terms?: boolean } = {}): Promise<{ profile: ProfileRow } | { response: HttpResult }> {
   if (!ctx.user) return { response: UNAUTHENTICATED };
   const profile = await ctx.store.getProfile(ctx.user.id);
   if (!profile) return { response: fail(403, "החשבון לא נמצא. התחברו מחדש.") };
   if (profile.blockedAt) return { response: BLOCKED };
+  if (opts.terms !== false && profile.termsVersion !== TERMS_VERSION) return { response: fail(403, "צריך לאשר את תנאי השימוש כדי להמשיך.", { terms: "required" }) };
   if (opts.nickname && !profile.displayName) return { response: fail(403, "בחרו כינוי לפני כתיבת ביקורת.") };
   return { profile };
 }

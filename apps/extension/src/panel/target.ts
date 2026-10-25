@@ -10,7 +10,7 @@ export interface ProductRef {
   snapshot: ProductSnapshot | null;
 }
 
-export function toTarget(ref: ProductRef, sizeGroup: string | null = null): ReviewTarget {
+export function toTarget(ref: ProductRef, sizeGroup: string | null = null, colorGroup: string | null = null): ReviewTarget {
   const snap = ref.snapshot;
   return {
     siteId: ref.siteId,
@@ -27,6 +27,7 @@ export function toTarget(ref: ProductRef, sizeGroup: string | null = null): Revi
     variantValues: snap?.variantValues ?? {},
     variantOptions: snap?.variantOptions ?? [],
     sizeGroup,
+    colorGroup,
     source: "extension",
   };
 }
