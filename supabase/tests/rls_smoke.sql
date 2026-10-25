@@ -69,6 +69,13 @@ begin
     assert false, 'a user must not be able to touch blocked_at';
   exception when insufficient_privilege then null; end;
 
+  perform set_config('request.jwt.claim.sub', bob::text, true);
+  begin
+    update public.profiles set display_name = 'ALICE_A' where id = bob;
+    assert false, 'nicknames are unique regardless of case';
+  exception when unique_violation then null; end;
+  perform set_config('request.jwt.claim.sub', alice::text, true);
+
   update public.profiles set display_name = 'hijacked' where id = bob;
   get diagnostics n = row_count;
   assert n = 0, 'a user cannot edit someone else''s profile';

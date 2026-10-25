@@ -31,6 +31,9 @@ create table public.profiles (
   last_active_at timestamptz
 );
 
+-- Nicknames are unique regardless of case, so nobody can pose as a leading reviewer ("Dana" vs "dana").
+create unique index profiles_display_name_unique on public.profiles (lower(display_name));
+
 create table public.reviewer_stats (
   user_id uuid primary key references public.profiles(id) on delete cascade,
   reviews_count integer not null default 0,
