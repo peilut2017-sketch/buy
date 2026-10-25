@@ -13,19 +13,17 @@ import {
   type ReviewView,
   type SortMode,
 } from "@smartbuy/core";
-import { Button, CompactSelect, FitMeter, Notice, Skel, Stars } from "@smartbuy/ui";
+import { NetworkError, deleteReview, getReviews, getSummary, setHelpful, type Identity, type ReviewTarget, type ReviewsResult } from "@smartbuy/data";
 import { useMemo, useState } from "preact/hooks";
-import { currentIdentity } from "../lib/auth.ts";
-import { deleteReview, getReviews, getSummary, setHelpful, type ReviewsResult } from "../lib/data.ts";
-import { useResource } from "../lib/hooks.ts";
-import { NetworkError } from "../lib/rest.ts";
+import { Button, CompactSelect, FitMeter, Notice, Skel, Stars } from "../components.tsx";
+import { useResource } from "../hooks.ts";
 import { ReviewItem } from "./ReviewItem.tsx";
-import type { ProductRef } from "./ProductHeader.tsx";
-import type { Identity } from "../lib/auth.ts";
 
-export interface ReviewsTabProps {
-  product: ProductRef;
+export interface ReviewsViewProps {
+  target: ReviewTarget;
   identity: Identity | null;
+  /** Looks the user up again at the moment of an action, in case they signed in after the screen loaded. */
+  getIdentity: () => Promise<Identity | null>;
   /** Bumps when something changed elsewhere (a review was saved) and the list must reload. */
   version: number;
   onWrite: () => void;
@@ -40,9 +38,9 @@ interface Loaded {
   result: ReviewsResult;
 }
 
-async function load(product: ProductRef, identity: Identity | null): Promise<Loaded> {
+async function load(target: ReviewTarget, identity: Identity | null): Promise<Loaded> {
   const token = identity?.token ?? null;
-  const summary = await getSummary(product.siteId, product.parentSku, token);
+  const summary = await getSummary(target.siteId, target.parentSku, token);
   if (!summary) return { productId: null, summary: null, result: { reviews: [], mine: null } };
   const result = await getReviews(summary.productId, token, identity?.userId ?? null);
   return { productId: summary.productId, summary, result };
@@ -69,8 +67,8 @@ const FIT_OPTIONS = [
   { value: "large", label: "גדול" },
 ];
 
-export function ReviewsTab({ product, identity, version, onWrite, onNeedSignIn, onReport, onAppeal }: ReviewsTabProps) {
-  const data = useResource(() => load(product, identity), [product.siteId, product.parentSku, identity?.userId ?? "", version]);
+export function ReviewsView({ target, identity, getIdentity, version, onWrite, onNeedSignIn, onReport, onAppeal }: ReviewsViewProps) {
+  const data = useResource(() => load(target, identity), [target.siteId, target.parentSku, identity?.userId ?? "", version]);
   const [filters, setFilters] = useState<ReviewFilters>(NO_FILTERS);
   const [sort, setSort] = useState<SortMode>("relevance");
   const [busyId, setBusyId] = useState<number | null>(null);
@@ -103,7 +101,7 @@ export function ReviewsTab({ product, identity, version, onWrite, onNeedSignIn, 
     setLocal({ version, patches: new Map(layer.patches).set(id, { ...layer.patches.get(id), ...change }), removed: layer.removed });
 
   const guarded = async (review: ReviewView, action: (id: Identity) => Promise<void>, failure: string) => {
-    const id = identity ?? (await currentIdentity());
+    const id = identity ?? (await getIdentity());
     if (!id) return onNeedSignIn("כדי לסמן ביקורת כמועילה או לפעול עליה צריך להתחבר.");
     setBusyId(review.id);
     setActionError(null);

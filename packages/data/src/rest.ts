@@ -1,7 +1,20 @@
 // Plain-fetch access to Supabase (PostgREST and Edge Functions). One data path for the background worker and the
 // extension pages; supabase-js is used only for sign-in. Reads of public data need no token.
 
-import { BACKEND_CONFIGURED, SUPABASE_ANON_KEY, SUPABASE_URL } from "./env.ts";
+
+export interface BackendConfig {
+  url: string;
+  anonKey: string;
+}
+
+let backend: BackendConfig = { url: "", anonKey: "" };
+
+/** Call once at start-up, with the Supabase URL and the public anon key. */
+export function configureBackend(config: BackendConfig): void {
+  backend = { url: config.url.replace(/\/$/, ""), anonKey: config.anonKey };
+}
+
+export const isBackendConfigured = (): boolean => backend.url !== "" && backend.anonKey !== "";
 
 export class NetworkError extends Error {
   constructor(message = "network") {
@@ -44,14 +57,14 @@ export interface RequestOptions {
 
 function headers(token: string | null | undefined, extra: Record<string, string> = {}): Record<string, string> {
   return {
-    apikey: SUPABASE_ANON_KEY,
-    authorization: `Bearer ${token ?? SUPABASE_ANON_KEY}`,
+    apikey: backend.anonKey,
+    authorization: `Bearer ${token ?? backend.anonKey}`,
     ...extra,
   };
 }
 
 async function execute(url: string, init: RequestInit, timeoutMs: number): Promise<Response> {
-  if (!BACKEND_CONFIGURED) throw new NotConfiguredError();
+  if (!isBackendConfigured()) throw new NotConfiguredError();
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
@@ -87,7 +100,7 @@ export async function rest<T>(table: string, options: RequestOptions = {}): Prom
   for (const [key, value] of Object.entries(params)) if (value !== undefined) query.set(key, String(value));
   const qs = query.toString();
   const res = await execute(
-    `${SUPABASE_URL}/rest/v1/${table}${qs ? `?${qs}` : ""}`,
+    `${backend.url}/rest/v1/${table}${qs ? `?${qs}` : ""}`,
     {
       method,
       headers: headers(token, {
@@ -104,9 +117,23 @@ export async function rest<T>(table: string, options: RequestOptions = {}): Prom
 /** An Edge Function call. Errors keep the server's per-field Hebrew messages. */
 export async function callFunction<T>(name: string, body: unknown, token?: string | null, timeoutMs = 20_000): Promise<T> {
   const res = await execute(
-    `${SUPABASE_URL}/functions/v1/${name}`,
+    `${backend.url}/functions/v1/${name}`,
     { method: "POST", headers: headers(token, { "content-type": "application/json" }), body: JSON.stringify(body) },
     timeoutMs,
   );
   return parse<T>(res);
+}
+
+/** Number of rows matching the filters, without fetching them (PostgREST `Prefer: count=exact`). */
+export async function restCount(table: string, params: Params = {}, token?: string | null): Promise<number> {
+  const query = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) if (value !== undefined) query.set(key, String(value));
+  const res = await execute(
+    `${backend.url}/rest/v1/${table}?${query.toString()}`,
+    { method: "HEAD", headers: headers(token, { prefer: "count=exact", range: "0-0", "range-unit": "items" }) },
+    15_000,
+  );
+  if (!res.ok) throw new ApiError(`request failed (${res.status})`, res.status);
+  const total = /\/(\d+)$/.exec(res.headers.get("content-range") ?? "")?.[1];
+  return total === undefined ? 0 : Number(total);
 }

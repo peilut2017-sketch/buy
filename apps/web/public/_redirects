@@ -1,0 +1,4 @@
+# A product page lives at /<site>/<sku>, and /<sku> is the shortcut for Terminal X (swap only the domain in a link).
+# Static pages (privacy, terms, ...) are real files and win over these rewrites.
+/:site/:sku  /product.html  200
+/:sku        /product.html  200

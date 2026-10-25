@@ -15,7 +15,8 @@
     "@smartbuy/core": "workspace:*",
     "@smartbuy/ui": "workspace:*",
     "@supabase/supabase-js": "^2.118.0",
-    "preact": "^10.29.8"
+    "preact": "^10.29.8",
+    "@smartbuy/data": "workspace:*"
   },
   "devDependencies": {
     "@preact/preset-vite": "^2.10.6",

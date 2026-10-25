@@ -9,6 +9,7 @@ const CLIENT_EVENTS = ["install", "first_product_view", "product_view", "panel_o
 const PLATFORMS = ["extension", "web_desktop", "web_mobile"] as const;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const MAX_PROPS_BYTES = 2048;
+const UNINSTALL_REASONS = ["too_many_popups", "not_useful", "privacy", "broken", "other"] as const;
 
 export const events: Handler = async (ctx, body) => {
   if (!isRecord(body)) return BAD_REQUEST;
@@ -45,6 +46,11 @@ export const events: Handler = async (ctx, body) => {
   if (event === "detect_failed" && isRecord(body.props)) {
     if (JSON.stringify(body.props).length > MAX_PROPS_BYTES) return fail(413, "הבקשה גדולה מדי.");
     props = body.props;
+  }
+  // The exit survey (spec 19) carries one answer from a fixed list, never free text.
+  if (event === "uninstall" && isRecord(body.props)) {
+    const reason = UNINSTALL_REASONS.find((r) => r === (body.props as Record<string, unknown>).reason);
+    if (reason) props = { reason };
   }
 
   await ctx.store.insertEvent({

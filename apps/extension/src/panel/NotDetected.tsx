@@ -3,7 +3,7 @@ import { Button, Notice, TextField } from "@smartbuy/ui";
 import { useState } from "preact/hooks";
 import { SITES } from "../lib/sites.ts";
 import type { SiteConfigResult } from "../lib/messages.ts";
-import type { ProductRef } from "./ProductHeader.tsx";
+import type { ProductRef } from "./target.ts";
 import { parentSkuOf } from "@smartbuy/core";
 
 /** Reads a pasted product link or SKU. Returns null when it matches no known store. */

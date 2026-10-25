@@ -304,6 +304,14 @@ describe.skipIf(!TEST_DB_URL)("Edge Function handlers on PostgreSQL", () => {
       expect(rows[1]!.props).toEqual({});
     });
 
+    it("keeps only a listed answer from the exit survey", async () => {
+      await send({ event: "uninstall", platform: "web_desktop", props: { reason: "privacy", note: "free text" } });
+      await send({ event: "uninstall", platform: "web_desktop", props: { reason: "made up" } });
+      const rows = await db.raw`select props from public.events order by id`;
+      expect(rows[0]!.props).toEqual({ reason: "privacy" });
+      expect(rows[1]!.props).toEqual({});
+    });
+
     it("rejects events a client may not send, a missing install id, an unknown store and oversized props", async () => {
       expect((await send({ event: "signup", platform: "extension", installId: install })).status).toBe(400);
       expect((await send({ event: "panel_open", platform: "extension" })).status).toBe(400);

@@ -1,9 +1,7 @@
-import { Button, FieldError, Notice, TextArea } from "@smartbuy/ui";
+import { ApiError, NetworkError, appealReview, type Identity } from "@smartbuy/data";
+import { Button, FieldError, Notice, TextArea } from "../components.tsx";
 import type { ReviewView } from "@smartbuy/core";
 import { useState } from "preact/hooks";
-import type { Identity } from "../lib/auth.ts";
-import { appealReview } from "../lib/data.ts";
-import { ApiError, NetworkError } from "../lib/rest.ts";
 
 type Phase = { kind: "form" } | { kind: "sending" } | { kind: "sent" } | { kind: "failed"; message: string };
 

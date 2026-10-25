@@ -1,11 +1,10 @@
-import { Button, IconButton, Notice, Root, Skel, StarInput, Switch } from "@smartbuy/ui";
+import { Button, IconButton, Notice, Root, Skel, StarInput, Switch, SignInCard } from "@smartbuy/ui";
 import { browser } from "wxt/browser";
 import { useState } from "preact/hooks";
 import { useSession, type Identity } from "../lib/auth.ts";
-import { dismissPending, getPendingReviews, getProfile, setProfileFlag, submitReview, type PendingReview } from "../lib/data.ts";
+import { dismissPending, getPendingReviews, getProfile, setProfileFlag, submitReview, type PendingReview } from "@smartbuy/data";
 import { BACKEND_CONFIGURED } from "../lib/env.ts";
-import { useResource } from "../lib/hooks.ts";
-import { SignInCard } from "../panel/AuthGate.tsx";
+import { useResource } from "@smartbuy/ui";
 
 function PendingItem({ item, identity, onChanged }: { item: PendingReview; identity: Identity; onChanged: () => void }) {
   const [rating, setRating] = useState<number | null>(null);
@@ -21,6 +20,7 @@ function PendingItem({ item, identity, onChanged }: { item: PendingReview; ident
         parentSku: item.product.parentSku,
         productType: item.product.productType ?? "general",
         detectionConfidence: "high",
+        source: "extension",
         product: { name: item.product.name, brand: null, imageUrl: item.product.imageUrl, url: item.product.url ?? "" },
         variantValues: {},
         rating: value,

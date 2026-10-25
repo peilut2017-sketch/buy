@@ -1,9 +1,7 @@
 import { REPORT_REASONS, validateReport, type ReportReason, type ReviewView } from "@smartbuy/core";
-import { Button, ChoiceGroup, FieldError, Notice, TextArea } from "@smartbuy/ui";
+import { reportReview, ApiError, NetworkError, type Identity } from "@smartbuy/data";
+import { Button, ChoiceGroup, FieldError, Notice, TextArea } from "../components.tsx";
 import { useState } from "preact/hooks";
-import type { Identity } from "../lib/auth.ts";
-import { reportReview } from "../lib/data.ts";
-import { ApiError, NetworkError } from "../lib/rest.ts";
 
 const REASON_LABEL: Record<ReportReason, string> = {
   spam: "ספאם או פרסומת",

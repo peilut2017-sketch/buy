@@ -1,7 +1,7 @@
 // Anonymous usage events. Privacy rule 7: no browsing history. A product view names the product but never the
 // install or the user, and the install id travels only with events that carry no product.
 
-import { callFunction } from "../lib/rest.ts";
+import { callFunction } from "@smartbuy/data";
 import { getLocal, setLocal } from "../lib/storage.ts";
 
 const INSTALL_KEY = "installId";

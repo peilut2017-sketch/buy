@@ -1,22 +1,20 @@
-import { Button, Notice, Skel } from "@smartbuy/ui";
-import type { Identity } from "../lib/auth.ts";
-import { getQuestions, getReviews, getSummary, hasDeliveredOrder } from "../lib/data.ts";
-import { useResource } from "../lib/hooks.ts";
+import { getQuestions, getReviews, getSummary, hasDeliveredOrder, type Identity, type ReviewTarget } from "@smartbuy/data";
+import { Button, Notice, Skel } from "../components.tsx";
+import { useResource } from "../hooks.ts";
 import { ReviewForm } from "./ReviewForm.tsx";
-import type { ProductRef } from "./ProductHeader.tsx";
 
 /** Loads what the form needs (questions, the user's own review, whether an order exists), then shows it. */
-export function WriteFlow({ product, identity, onDone, onCancel }: { product: ProductRef; identity: Identity; onDone: () => void; onCancel: () => void }) {
-  const type = product.snapshot?.productType ?? "general";
+export function WriteFlow({ target, identity, onDone, onCancel }: { target: ReviewTarget; identity: Identity; onDone: () => void; onCancel: () => void }) {
+  const type = target.productType;
   const data = useResource(async () => {
-    const summary = await getSummary(product.siteId, product.parentSku, identity.token);
+    const summary = await getSummary(target.siteId, target.parentSku, identity.token);
     const [questions, mine, hasOrder] = await Promise.all([
       getQuestions(type),
       summary ? getReviews(summary.productId, identity.token, identity.userId).then((r) => r.mine) : Promise.resolve(null),
       summary ? hasDeliveredOrder(identity.token, summary.productId) : Promise.resolve(false),
     ]);
     return { questions, mine, hasOrder };
-  }, [product.siteId, product.parentSku, identity.userId, type]);
+  }, [target.siteId, target.parentSku, identity.userId, type]);
 
   if (data.status === "loading") {
     return (
@@ -33,5 +31,5 @@ export function WriteFlow({ product, identity, onDone, onCancel }: { product: Pr
       </Notice>
     );
   }
-  return <ReviewForm product={product} identity={identity} existing={data.data.mine} questions={data.data.questions} hasOrder={data.data.hasOrder} onDone={onDone} onCancel={onCancel} />;
+  return <ReviewForm target={target} identity={identity} existing={data.data.mine} questions={data.data.questions} hasOrder={data.data.hasOrder} onDone={onDone} onCancel={onCancel} />;
 }

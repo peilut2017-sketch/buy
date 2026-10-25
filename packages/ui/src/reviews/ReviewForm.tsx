@@ -1,16 +1,13 @@
 import { validateReview, type ReviewAnswers } from "@smartbuy/core";
-import { Button, Chip, ChoiceGroup, FieldError, Notice, SelectField, StarInput, TextArea, TextField } from "@smartbuy/ui";
+import { ApiError, NetworkError, submitReview, type Identity, type MyReview, type Question, type ReviewTarget, type SubmitReviewPayload } from "@smartbuy/data";
 import { useMemo, useState } from "preact/hooks";
-import type { Identity } from "../lib/auth.ts";
-import { submitReview, type MyReview, type Question, type SubmitReviewPayload } from "../lib/data.ts";
-import { ApiError, NetworkError } from "../lib/rest.ts";
+import { Button, Chip, ChoiceGroup, FieldError, Notice, SelectField, StarInput, TextArea, TextField } from "../components.tsx";
 import { recentMonths } from "./format.ts";
-import type { ProductRef } from "./ProductHeader.tsx";
 
 type Phase = { kind: "form" } | { kind: "sending" } | { kind: "sent"; edited: boolean } | { kind: "failed"; message: string };
 
 export interface ReviewFormProps {
-  product: ProductRef;
+  target: ReviewTarget;
   identity: Identity;
   existing: MyReview | null;
   questions: Question[];
@@ -29,14 +26,13 @@ function initialAnswers(existing: MyReview | null): Record<string, unknown> {
   return { ...(existing?.answers ?? {}) };
 }
 
-export function ReviewForm({ product, identity, existing, questions, hasOrder, onDone, onCancel }: ReviewFormProps) {
-  const snap = product.snapshot;
+export function ReviewForm({ target, identity, existing, questions, hasOrder, onDone, onCancel }: ReviewFormProps) {
   const [rating, setRating] = useState<number | null>(existing?.rating ?? null);
   const [title, setTitle] = useState(existing?.title ?? "");
   const [body, setBody] = useState(existing?.body ?? "");
   const [answers, setAnswers] = useState<Record<string, unknown>>(initialAnswers(existing));
   const [month, setMonth] = useState(existing?.purchaseMonth?.slice(0, 7) ?? "");
-  const [variant, setVariant] = useState<Record<string, string>>({ ...(existing?.variantValues ?? {}), ...(snap?.variantValues ?? {}) });
+  const [variant, setVariant] = useState<Record<string, string>>({ ...(existing?.variantValues ?? {}), ...target.variantValues });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [phase, setPhase] = useState<Phase>({ kind: "form" });
   const months = useMemo(() => recentMonths(new Date()), []);
@@ -59,12 +55,13 @@ export function ReviewForm({ product, identity, existing, questions, hasOrder, o
     setPhase({ kind: "sending" });
 
     const payload: SubmitReviewPayload = {
-      siteId: product.siteId,
-      sku: product.sku,
-      parentSku: product.parentSku,
-      productType: snap?.productType ?? "general",
-      detectionConfidence: snap?.confidence === "high" ? "high" : snap?.confidence === "medium" ? "medium" : "low",
-      product: { name: snap?.name ?? null, brand: snap?.brand ?? null, imageUrl: snap?.imageUrl ?? null, url: snap?.url ?? "" },
+      siteId: target.siteId,
+      sku: target.sku,
+      parentSku: target.parentSku,
+      productType: target.productType,
+      detectionConfidence: target.confidence,
+      source: target.source,
+      product: { name: target.name, brand: target.brand, imageUrl: target.imageUrl, url: target.url },
       variantValues: variant,
       rating: checked.value.rating,
       title: checked.value.title,
@@ -110,7 +107,7 @@ export function ReviewForm({ product, identity, existing, questions, hasOrder, o
   const value = questions.find((q) => q.key === "value");
   const recommend = questions.find((q) => q.key === "recommend");
   const options = (q: Question | undefined) => (q && Array.isArray(q.options) ? q.options : []);
-  const variantGroups = snap?.variantOptions ?? [];
+  const variantGroups = target.variantOptions;
 
   return (
     <form class="form" onSubmit={submit} noValidate aria-label={existing ? "עריכת ביקורת" : "כתיבת ביקורת"}>

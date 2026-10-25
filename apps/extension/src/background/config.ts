@@ -3,7 +3,7 @@
 
 import { configFromSite, isFresh, pickConfig, type CachedConfig, type SiteRecord, type SiteStatus } from "@smartbuy/core";
 import { getLocal, setLocal } from "../lib/storage.ts";
-import { rest } from "../lib/rest.ts";
+import { rest } from "@smartbuy/data";
 import type { SiteConfigResult } from "../lib/messages.ts";
 import type { RegisteredSite } from "../lib/sites.ts";
 

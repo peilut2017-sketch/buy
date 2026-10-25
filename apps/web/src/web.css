@@ -1,0 +1,52 @@
+/* Website layout. Level A everywhere; the only glass is the bottom tab bar on phones (docs/02-design-system.md 2.4). */
+html, body { margin: 0; background: var(--sb-canvas); }
+.web { min-block-size: 100vh; display: flex; flex-direction: column; }
+.web__skip { position: absolute; inset-inline-start: var(--space-4); inset-block-start: -48px; z-index: 10; padding: var(--space-2) var(--space-3); background: var(--sb-surface); border-radius: var(--radius-sm); }
+.web__skip:focus { inset-block-start: var(--space-2); }
+.web__header { background: var(--sb-surface); border-block-end: 1px solid var(--sb-divider); }
+.web__bar { max-inline-size: 960px; margin-inline: auto; padding: var(--space-3) var(--space-4); display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); }
+.web__brand { display: inline-flex; align-items: center; gap: var(--space-2); font-size: 16px; line-height: 22px; font-weight: 650; color: var(--sb-text-primary); text-decoration: none; }
+.web__mark { position: relative; inline-size: 20px; block-size: 12px; }
+.web__mark::before { content: ""; position: absolute; inset-inline: 0; inset-block-start: 5px; block-size: 2px; border-radius: 1px; background: var(--sb-star-empty); }
+.web__mark::after { content: ""; position: absolute; inset-inline-start: 8px; inset-block-start: 0; inline-size: 12px; block-size: 12px; border-radius: 50%; background: var(--sb-text-primary); }
+.web__nav { display: flex; gap: var(--space-1); }
+.web__nav a { padding: var(--space-2) var(--space-3); border-radius: var(--radius-sm); color: var(--sb-text-secondary); text-decoration: none; font-weight: 500; }
+.web__nav a:hover { background: var(--sb-skeleton); color: var(--sb-text-primary); }
+.web__nav a[aria-current="page"] { color: var(--sb-text-primary); font-weight: 600; }
+.web__main { flex: 1 1 auto; inline-size: 100%; max-inline-size: 720px; margin-inline: auto; padding: var(--space-6) var(--space-4) var(--space-10); box-sizing: border-box; display: flex; flex-direction: column; gap: var(--space-4); }
+.web__main--wide { max-inline-size: 960px; }
+.web__card { background: var(--sb-surface); border-radius: var(--radius-region); padding: var(--space-4); }
+.web__card + .web__card { margin-block-start: 0; }
+.web__footer { max-inline-size: 960px; inline-size: 100%; margin-inline: auto; padding: var(--space-6) var(--space-4); box-sizing: border-box; color: var(--sb-text-secondary); font-size: 12px; line-height: 16px; display: flex; flex-direction: column; gap: var(--space-2); }
+.web__footer nav { display: flex; flex-wrap: wrap; gap: var(--space-4); }
+.web__tabbar { display: none; }
+.hero { display: flex; flex-direction: column; gap: var(--space-3); padding-block: var(--space-6) var(--space-2); }
+.hero h1 { font-size: 24px; line-height: 30px; font-weight: 650; }
+.search { display: flex; gap: var(--space-2); }
+.search .sb-field { flex: 1 1 auto; }
+.prose { display: flex; flex-direction: column; gap: var(--space-3); }
+.prose h2 { font-size: 16px; line-height: 22px; font-weight: 600; margin-block-start: var(--space-4); }
+.prose p, .prose li { font-size: 14px; line-height: 22px; }
+.prose ul { padding-inline-start: var(--space-5); list-style: disc; display: flex; flex-direction: column; gap: var(--space-1); }
+.draft { border-inline-start: 3px solid var(--sb-warning); padding: var(--space-2) var(--space-3); background: rgba(184, 117, 22, 0.08); border-radius: var(--radius-sm); font-size: 13px; }
+.table { inline-size: 100%; border-collapse: collapse; font-size: 13px; }
+.table th, .table td { text-align: start; padding: var(--space-2) var(--space-3); border-block-end: 1px solid var(--sb-divider); vertical-align: top; }
+.table th { font-weight: 600; color: var(--sb-text-secondary); font-size: 12px; }
+.admin-tabs { max-inline-size: 640px; }
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: var(--space-3); }
+.kpi { background: var(--sb-surface); border-radius: var(--radius-region); padding: var(--space-3) var(--space-4); }
+.kpi strong { display: block; font-size: 24px; line-height: 30px; font-weight: 650; font-variant-numeric: tabular-nums; }
+
+@media (max-width: 640px) {
+  .web__nav { display: none; }
+  .web__main { padding-block-end: calc(var(--space-10) + 72px); }
+  .web__footer { padding-block-end: calc(var(--space-6) + 72px); }
+  .web__tabbar {
+    display: flex; position: fixed; inset-inline: var(--space-3); inset-block-end: var(--space-3); z-index: 5;
+    padding: 4px; gap: 2px; border-radius: var(--radius-shell);
+    background: var(--sb-glass-bg); -webkit-backdrop-filter: var(--sb-glass-blur); backdrop-filter: var(--sb-glass-blur);
+    border: 1px solid var(--sb-glass-border); box-shadow: var(--sb-glass-shadow), var(--sb-glass-highlight);
+  }
+  .web__tabbar a { flex: 1 1 0; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: var(--space-2) var(--space-1); border-radius: 12px; color: var(--sb-text-secondary); text-decoration: none; font-size: 11px; line-height: 15px; font-weight: 500; }
+  .web__tabbar a[aria-current="page"] { background: var(--sb-glass-c-bg); box-shadow: var(--sb-glass-c-shadow); color: var(--sb-text-primary); font-weight: 600; }
+}

@@ -3,9 +3,11 @@
 
 import { createClient, type Session, type SupabaseClient } from "@supabase/supabase-js";
 import { browser } from "wxt/browser";
+import { AuthError, type AuthApi, type SessionState } from "@smartbuy/ui";
+import type { Identity } from "@smartbuy/data";
 import { useEffect, useState } from "preact/hooks";
 import { BACKEND_CONFIGURED, SUPABASE_ANON_KEY, SUPABASE_URL } from "./env.ts";
-import { NotConfiguredError } from "./rest.ts";
+import { NotConfiguredError } from "@smartbuy/data";
 
 const extensionStorage = {
   async getItem(key: string): Promise<string | null> {
@@ -37,12 +39,6 @@ export function authClient(): SupabaseClient {
   return client;
 }
 
-export interface Identity {
-  token: string;
-  userId: string;
-  email: string | null;
-}
-
 function toIdentity(session: Session | null): Identity | null {
   return session ? { token: session.access_token, userId: session.user.id, email: session.user.email ?? null } : null;
 }
@@ -52,8 +48,6 @@ export async function currentIdentity(): Promise<Identity | null> {
   const { data } = await authClient().auth.getSession();
   return toIdentity(data.session);
 }
-
-export type SessionState = { status: "loading" } | { status: "out" } | { status: "in"; identity: Identity };
 
 export function useSession(): SessionState {
   const [state, setState] = useState<SessionState>({ status: BACKEND_CONFIGURED ? "loading" : "out" });
@@ -75,8 +69,6 @@ export function useSession(): SessionState {
   }, []);
   return state;
 }
-
-export class AuthError extends Error {}
 
 export async function signInWithGoogle(): Promise<void> {
   const auth = authClient().auth;
@@ -110,3 +102,16 @@ export async function verifyEmailCode(email: string, code: string): Promise<void
 export async function signOut(): Promise<void> {
   await authClient().auth.signOut();
 }
+
+export type { Identity, SessionState };
+
+/** What the shared sign-in screens use in the extension. */
+export const extensionAuth: AuthApi = {
+  configured: BACKEND_CONFIGURED,
+  useSession,
+  signInWithGoogle,
+  requestEmailCode,
+  verifyEmailCode,
+  getIdentity: currentIdentity,
+  signOut,
+};

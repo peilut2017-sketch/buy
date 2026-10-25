@@ -8,8 +8,15 @@
   "exports": {
     ".": "./src/index.ts",
     "./tokens.css": "./src/tokens.css",
-    "./base.css": "./src/base.css"
+    "./base.css": "./src/base.css",
+    "./reviews.css": "./src/reviews.css"
   },
-  "dependencies": { "@smartbuy/core": "workspace:*", "preact": "^10.29.8" },
-  "scripts": { "typecheck": "tsc -p tsconfig.json" }
+  "dependencies": {
+    "@smartbuy/core": "workspace:*",
+    "preact": "^10.29.8",
+    "@smartbuy/data": "workspace:*"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json"
+  }
 }

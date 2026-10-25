@@ -288,6 +288,7 @@ export interface SubmitReviewPayload {
   parentSku: string;
   productType: string;
   detectionConfidence: "high" | "medium" | "low";
+  source: "extension" | "web";
   product: { name: string | null; brand: string | null; imageUrl: string | null; url: string };
   variantValues: Record<string, string>;
   rating: number;

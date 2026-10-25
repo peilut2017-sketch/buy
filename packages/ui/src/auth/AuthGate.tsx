@@ -1,12 +1,10 @@
 import { validateNickname } from "@smartbuy/core";
-import { Button, Notice, Skel, TextField } from "@smartbuy/ui";
+import { NetworkError, NicknameTakenError, getProfile, setNickname, type Identity, type Profile } from "@smartbuy/data";
 import type { ComponentChildren } from "preact";
 import { useState } from "preact/hooks";
-import { AuthError, requestEmailCode, signInWithGoogle, useSession, verifyEmailCode, type Identity } from "../lib/auth.ts";
-import { getProfile, NicknameTakenError, setNickname, type Profile } from "../lib/data.ts";
-import { BACKEND_CONFIGURED } from "../lib/env.ts";
-import { useResource } from "../lib/hooks.ts";
-import { NetworkError } from "../lib/rest.ts";
+import { Button, Notice, Skel, TextField } from "../components.tsx";
+import { useResource } from "../hooks.ts";
+import { AuthError, useAuth } from "./context.tsx";
 
 function messageOf(e: unknown): string {
   if (e instanceof AuthError) return e.message;
@@ -16,6 +14,7 @@ function messageOf(e: unknown): string {
 
 /** Sign-in card: Google, or a one-time code by email. Viewing reviews never needs this; writing and voting do. */
 export function SignInCard({ reason }: { reason: string }) {
+  const { signInWithGoogle, requestEmailCode, verifyEmailCode } = useAuth();
   const [step, setStep] = useState<"choose" | "email" | "code">("choose");
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
@@ -112,8 +111,9 @@ export interface Account {
  * `reason` tells people why sign-in is needed, in one sentence.
  */
 export function RequireAccount({ reason, children }: { reason: string; children: (account: Account) => ComponentChildren }) {
+  const { configured, useSession } = useAuth();
   const session = useSession();
-  if (!BACKEND_CONFIGURED) return <Notice kind="error" title="החיבור לשרת לא הוגדר">גרסת הפיתוח הזו נבנתה בלי כתובת שרת.</Notice>;
+  if (!configured) return <Notice kind="error" title="החיבור לשרת לא הוגדר">גרסת הפיתוח הזו נבנתה בלי כתובת שרת.</Notice>;
   if (session.status === "loading") return <Skel width="70%" height="18px" />;
   if (session.status === "out") return <SignInCard reason={reason} />;
   return <WithProfile identity={session.identity}>{children}</WithProfile>;

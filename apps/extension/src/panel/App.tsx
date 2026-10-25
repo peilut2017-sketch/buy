@@ -1,17 +1,12 @@
 import type { ReviewView } from "@smartbuy/core";
-import { Button, IconButton, Notice, Root, Skel } from "@smartbuy/ui";
+import { AppealForm, Button, IconButton, Notice, ProductHeader, ReportForm, RequireAccount, ReviewsView, Root, SignInCard, Skel, WriteFlow } from "@smartbuy/ui";
 import { useEffect, useState } from "preact/hooks";
-import { useSession } from "../lib/auth.ts";
+import { currentIdentity, useSession } from "../lib/auth.ts";
 import { BACKEND_CONFIGURED } from "../lib/env.ts";
 import { siteById } from "../lib/sites.ts";
-import { AppealForm } from "./AppealForm.tsx";
-import { RequireAccount, SignInCard } from "./AuthGate.tsx";
 import { NotDetected } from "./NotDetected.tsx";
-import { ProductHeader, type ProductRef } from "./ProductHeader.tsx";
-import { ReportForm } from "./ReportForm.tsx";
-import { ReviewsTab } from "./ReviewsTab.tsx";
+import { toTarget, type ProductRef } from "./target.ts";
 import { useActiveTab } from "./useActiveTab.ts";
-import { WriteFlow } from "./WriteFlow.tsx";
 
 type View =
   | { name: "list" }
@@ -40,6 +35,7 @@ export function App() {
   const fromTab: ProductRef | null =
     tab.product && site ? { siteId: tab.product.siteId, siteName: site.name, sku: tab.product.sku, parentSku: tab.product.parentSku, snapshot: tab.product } : null;
   const product = manual ?? fromTab;
+  const target = product ? toTarget(product) : null;
   const productKey = product ? `${product.siteId}:${product.parentSku}` : "";
 
   // A different product, or a different tab, starts again at the list.
@@ -61,12 +57,12 @@ export function App() {
     content = <Notice kind="error" title="החיבור לשרת לא הוגדר">גרסת הפיתוח הזו נבנתה בלי כתובת שרת, ולכן אין ממה לטעון ביקורות.</Notice>;
   } else if (tab.loading && !manual) {
     content = <div class="sb-stack sb-gap-3" role="status" aria-label="טוענים"><Skel width="60%" variant="title" /><Skel width="90%" /></div>;
-  } else if (!product) {
+  } else if (!product || !target) {
     content = <NotDetected onLookup={setManual} />;
   } else if (view.name === "write") {
     content = (
       <RequireAccount reason="כדי לכתוב ביקורת צריך להתחבר.">
-        {({ identity: id }) => <WriteFlow product={product} identity={id} onDone={() => backToList(true)} onCancel={() => backToList()} />}
+        {({ identity: id }) => <WriteFlow target={target} identity={id} onDone={() => backToList(true)} onCancel={() => backToList()} />}
       </RequireAccount>
     );
   } else if (view.name === "report") {
@@ -85,9 +81,10 @@ export function App() {
     content = <SignInView reason={view.reason} onDone={() => backToList(true)} />;
   } else {
     content = (
-      <ReviewsTab
-        product={product}
+      <ReviewsView
+        target={target}
         identity={identity}
+        getIdentity={currentIdentity}
         version={version}
         onWrite={() => setView({ name: "write" })}
         onNeedSignIn={(reason) => setView({ name: "signin", reason })}
@@ -99,9 +96,9 @@ export function App() {
 
   return (
     <Root class="panel">
-      {product && (
+      {target && (
         <header class="panel__header">
-          <ProductHeader product={product} />
+          <ProductHeader target={target} />
           {manual && <div><Button variant="quiet" small onClick={() => setManual(null)}>חזרה לעמוד הנוכחי</Button></div>}
           {view.name !== "list" && (
             <div><IconButton icon="arrow-back" iconFlip label="חזרה לביקורות" onClick={() => backToList()} /></div>

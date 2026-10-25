@@ -106,10 +106,12 @@
 .sb-segment {
   flex: 1 1 0; min-inline-size: 0; min-block-size: 30px; padding-inline: var(--space-3);
   border: 1px solid transparent; border-radius: 8px; background: transparent;
-  font-size: 13px; line-height: 19px; font-weight: 500; color: var(--sb-text-secondary);
-  transition: background-color var(--dur-hover) var(--ease-out), color var(--dur-hover) var(--ease-out), box-shadow var(--dur-hover) var(--ease-out);
+  /* Inactive text is the primary colour: the secondary grey on the segment track is only 4.3:1. The active segment is told
+     apart by its level-C surface and heavier weight, not by a lighter text colour. */
+  font-size: 13px; line-height: 19px; font-weight: 500; color: var(--sb-text-primary);
+  transition: background-color var(--dur-hover) var(--ease-out), box-shadow var(--dur-hover) var(--ease-out);
 }
-.sb-segment:hover { color: var(--sb-text-primary); }
+.sb-segment:hover:not([aria-selected="true"]) { background: rgba(255, 255, 255, 0.5); }
 .sb-segment[aria-selected="true"] {
   background: var(--sb-glass-c-bg); border-color: var(--sb-glass-c-border); box-shadow: var(--sb-glass-c-shadow);
   color: var(--sb-text-primary); font-weight: 600;

@@ -1,3 +1,4 @@
+import "../src/lib/backend.ts";
 import { browser } from "wxt/browser";
 import { defineBackground } from "wxt/utils/define-background";
 import { loadSiteConfig } from "../src/background/config.ts";
@@ -5,7 +6,7 @@ import { installId, track, trackFirstViewOnce } from "../src/background/events.t
 import { syncContentScripts } from "../src/background/register.ts";
 import { WEBSITE_URL } from "../src/lib/env.ts";
 import type { Message, PanelMode, ProductSnapshot } from "../src/lib/messages.ts";
-import { getSummary } from "../src/lib/data.ts";
+import { getSummary } from "@smartbuy/data";
 import { getSession, removeSession, setSession } from "../src/lib/storage.ts";
 import { siteById } from "../src/lib/sites.ts";
 import type { ProductSummary } from "@smartbuy/core";

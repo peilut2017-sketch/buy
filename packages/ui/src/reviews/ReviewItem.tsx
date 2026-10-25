@@ -1,5 +1,5 @@
 import { VERIFICATION_LABEL, type ReviewView } from "@smartbuy/core";
-import { Button, Chip, Notice, Stars } from "@smartbuy/ui";
+import { Button, Chip, Notice, Stars } from "../components.tsx";
 import { useState } from "preact/hooks";
 import { answerFacts, authorLine, helpfulLabel, reviewTiming, updateLabel, variantText } from "./format.ts";
 
