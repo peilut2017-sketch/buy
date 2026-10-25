@@ -4,6 +4,7 @@ import {
   parsePriceText,
   readListingCardsWithConfig,
   readPriceStockWithConfig,
+  readProductMeta,
   readSelectedVariantWithConfig,
   readVariantOptionsWithConfig,
 } from "./engine.ts";
@@ -133,5 +134,35 @@ describe("listing cards", () => {
   });
   it("returns nothing without listing rules", () => {
     expect(readListingCardsWithConfig(parse("<div class='card'></div>"), base)).toEqual([]);
+  });
+});
+
+describe("readProductMeta", () => {
+  const html = (head: string, body = "") => parse(`<head>${head}</head><body>${body}</body>`);
+
+  it("prefers structured data", () => {
+    const doc = html(`<title>Fallback</title><meta property="og:title" content="OG name">
+      <script type="application/ld+json">{"@type":"Product","name":"  מכנסי   דוגמה ","brand":{"@type":"Brand","name":"מותג"},"image":["https://img.test/a.jpg"]}</script>`);
+    expect(readProductMeta(doc, base)).toEqual({ name: "מכנסי דוגמה", brand: "מותג", imageUrl: "https://img.test/a.jpg" });
+  });
+
+  it("falls back to Open Graph, then the heading, then the title", () => {
+    expect(readProductMeta(html(`<meta property="og:title" content="OG name"><meta property="og:image" content="/pic.jpg">`), base)).toMatchObject({
+      name: "OG name",
+      imageUrl: expect.stringMatching(/\/pic\.jpg$/),
+    });
+    expect(readProductMeta(html(`<title>Doc title</title>`, `<h1> Heading </h1>`), base).name).toBe("Heading");
+    expect(readProductMeta(html(`<title>Doc title</title>`), base).name).toBe("Doc title");
+  });
+
+  it("returns nulls rather than inventing anything, and refuses non-web image URLs", () => {
+    const empty = readProductMeta(parse("<p></p>"), base);
+    expect(empty).toEqual({ name: null, brand: null, imageUrl: null });
+    expect(readProductMeta(html(`<meta property="og:image" content="javascript:alert(1)">`), base).imageUrl).toBeNull();
+    expect(readProductMeta(html(`<meta property="og:image" content="data:image/png;base64,AAAA">`), base).imageUrl).toBeNull();
+  });
+
+  it("cuts very long names", () => {
+    expect(readProductMeta(html(`<title>${"א".repeat(500)}</title>`), base).name).toHaveLength(200);
   });
 });

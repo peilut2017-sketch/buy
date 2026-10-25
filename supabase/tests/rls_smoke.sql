@@ -487,6 +487,7 @@ begin
   perform set_config('request.jwt.claim.sub', '', true);
   set local role anon;
   assert (select reviews_count from public.product_summary where product_id = 1) = 1, 'summary counts public reviews';
+  assert (select parent_sku from public.product_summary where site_id = 'terminalx' and parent_sku = 'w000001') = 'w000001', 'summary can be looked up by site and parent sku';
   assert (select fit_small from public.product_summary where product_id = 1) = 1, 'summary counts fit answers';
   assert (select reviews_count from public.product_summary where product_id = 3) = 1, 'summary counts bob''s third review';
   assert (select rating_avg from public.product_summary where product_id = 2) is null, 'hidden review is excluded from the average';

@@ -17,10 +17,15 @@ import {
   type VersionedConfig,
 } from "@smartbuy/core";
 import bundled from "../config.json" with { type: "json" };
+import site from "../site.json" with { type: "json" };
 
-export const SITE_ID = "terminalx";
-export const DOMAINS = ["terminalx.com", "www.terminalx.com"] as const;
-export const HOST_PERMISSION = "https://www.terminalx.com/*";
+export const SITE = site;
+export const SITE_ID = site.id;
+export const DOMAINS: readonly string[] = site.domains;
+/** The only host permission this store needs. Requested at runtime, never at install (CLAUDE.md rule 4). */
+export const HOST_PERMISSION: string = site.hostPermission;
+/** Match patterns for the dynamically registered content script. */
+export const CONTENT_MATCHES: readonly string[] = site.contentMatches;
 
 const check = validateConfig(bundled, null);
 if (!check.ok) throw new Error(`terminalx bundled config is invalid: ${check.reason}`);
@@ -30,7 +35,7 @@ export const BUNDLED_CONFIG: VersionedConfig = { version: 1, config: check.confi
 
 export const terminalxAdapter: SiteAdapter = {
   id: SITE_ID,
-  matchesUrl: (url) => (DOMAINS as readonly string[]).includes(url.hostname),
+  matchesUrl: (url) => DOMAINS.includes(url.hostname),
   detectProduct: (doc, url, cfg: AdapterConfig) => detectWithConfig(SITE_ID, doc, url, cfg),
   readVariantOptions: readVariantOptionsWithConfig,
   readSelectedVariant: readSelectedVariantWithConfig,

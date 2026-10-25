@@ -8,10 +8,14 @@
     "test:watch": "vitest",
     "typecheck": "pnpm -r --if-present typecheck",
     "lint:rtl": "node scripts/check-logical-css.mjs",
-    "e2e": "pnpm --filter @smartbuy/extension build && node tests/e2e/run.mjs"
+    "check:manifest": "node scripts/check-manifest.mjs",
+    "build:ext": "pnpm --filter @smartbuy/extension build",
+    "e2e": "node tests/e2e/build.mjs && node tests/e2e/run.mjs",
+    "check": "pnpm test && pnpm typecheck && pnpm lint:rtl && pnpm check:manifest"
   },
   "devDependencies": {
     "@types/node": "^22.20.5",
+    "axe-core": "^4.14.0",
     "jsdom": "^26.1.0",
     "typescript": "~5.9.3",
     "vitest": "^3.2.7"

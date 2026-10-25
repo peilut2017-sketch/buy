@@ -188,7 +188,7 @@ export interface ReviewView {
   writtenAt: string;
   editedAt: string | null;
   helpfulCount: number;
-  author: { name: string; level: ReviewerLevel; reviewsCount: number } | null;
+  author: { name: string; level: ReviewerLevel; reviewsCount: number; helpfulReceived: number } | null;
   updates: ReviewUpdateView[];
   /** The signed-in user wrote it. */
   mine: boolean;

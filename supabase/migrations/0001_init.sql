@@ -400,6 +400,8 @@ create table public.settings (
 create or replace view public.product_summary with (security_invoker = true) as
 select
   p.id as product_id,
+  p.site_id,
+  p.parent_sku,
   count(r.id) filter (where r.status = 'visible' and r.body is not null) as reviews_count,
   count(r.id) filter (where r.status = 'visible' and r.body is not null and r.verification = 'verified') as verified_count,
   round(avg(r.rating) filter (where r.status = 'visible' and r.body is not null), 1) as rating_avg,

@@ -199,3 +199,42 @@ export function readListingCardsWithConfig(doc: Document, cfg: AdapterConfig): L
   }
   return cards;
 }
+
+export interface ProductMeta {
+  name: string | null;
+  brand: string | null;
+  imageUrl: string | null;
+}
+
+function clean(text: string | null | undefined, max: number): string | null {
+  if (!text) return null;
+  const value = text.replace(/\s+/g, " ").trim();
+  return value === "" ? null : value.slice(0, max);
+}
+
+function absoluteHttp(raw: unknown, base: string): string | null {
+  const value = Array.isArray(raw) ? raw[0] : raw;
+  const text = typeof value === "object" && value !== null ? (value as Record<string, unknown>).url : value;
+  if (typeof text !== "string") return null;
+  try {
+    const url = new URL(text, base);
+    return url.protocol === "https:" || url.protocol === "http:" ? url.href : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Name, brand and picture for the panel header. Standard markup first; nothing is invented when it is missing. */
+export function readProductMeta(doc: Document, cfg: AdapterConfig): ProductMeta {
+  const ld = cfg.signals.jsonLd ? jsonLdProduct(doc, cfg.signals.jsonLd.type) : jsonLdProduct(doc, "Product");
+  const base = doc.baseURI || "https://example.invalid/";
+  const og = (property: string) => doc.querySelector(`meta[property='${property}']`)?.getAttribute("content");
+  const brandRaw = ld?.brand;
+  const brand =
+    typeof brandRaw === "string" ? brandRaw : typeof brandRaw === "object" && brandRaw !== null ? String((brandRaw as Record<string, unknown>).name ?? "") : null;
+  return {
+    name: clean(typeof ld?.name === "string" ? ld.name : null, 200) ?? clean(og("og:title"), 200) ?? clean(doc.querySelector("h1")?.textContent, 200) ?? clean(doc.title, 200),
+    brand: clean(brand, 80),
+    imageUrl: absoluteHttp(ld?.image, base) ?? absoluteHttp(og("og:image"), base),
+  };
+}

@@ -65,6 +65,19 @@ describe("validateReview", () => {
     expect(validateReview({ rating: 4, body: emoji, answers: { fit: "exact" }, purchaseMonth: "2026-09" }, ctx()).ok).toBe(true);
   });
 
+  it("when the form requires text it reports every problem at once, including the ones that depend on text", () => {
+    const r = validateReview({ rating: null }, ctx({ requireBody: true }));
+    expect(r).toEqual({
+      ok: false,
+      errors: {
+        rating: "בחרו דירוג בין 1 ל-5 כוכבים.",
+        body: "כתבו כמה מילים על המוצר.",
+        fit: "בחרו איך המידה.",
+        purchaseMonth: "בחרו את חודש הרכישה.",
+      },
+    });
+  });
+
   it("a rating alone is a quick rating: no text, no other requirements", () => {
     expect(validateReview({ rating: 3 }, ctx())).toEqual({
       ok: true,

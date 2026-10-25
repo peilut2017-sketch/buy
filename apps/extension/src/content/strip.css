@@ -1,0 +1,11 @@
+/* The strip: a level-B glass frame around a solid level-A region. Positioned by the host element. */
+.strip { inline-size: 100%; }
+.strip__inner { display: flex; flex-direction: column; gap: var(--space-2); }
+.strip__top { display: flex; align-items: center; gap: var(--space-2); }
+.strip__brand { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; line-height: 15px; font-weight: 500; color: var(--sb-text-secondary); }
+.strip__mark { position: relative; inline-size: 14px; block-size: 8px; }
+.strip__mark::before { content: ""; position: absolute; inset-inline: 0; inset-block-start: 3px; block-size: 2px; border-radius: 1px; background: var(--sb-star-empty); }
+.strip__mark::after { content: ""; position: absolute; inset-inline-start: 6px; inset-block-start: 0; inline-size: 8px; block-size: 8px; border-radius: 50%; background: var(--sb-text-primary); }
+.strip__score { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }
+.strip__rating { font-size: 16px; line-height: 22px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.strip__actions { display: flex; align-items: center; gap: var(--space-2); }

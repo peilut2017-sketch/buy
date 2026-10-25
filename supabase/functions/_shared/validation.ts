@@ -42,6 +42,11 @@ export interface ReviewContext {
   requiredAnswers: readonly string[];
   now: Date;
   limits?: Partial<ReviewLimits>;
+  /**
+   * The form is publishing a review, so text is required. Without it the answers and the purchase month are still
+   * checked, which lets a form show every problem at once instead of one at a time.
+   */
+  requireBody?: boolean;
 }
 
 export interface CleanReview {
@@ -140,6 +145,8 @@ export function validateReview(input: ReviewInput, ctx: ReviewContext): Validati
   }
 
   const body = cleanText(input.body);
+  const publishing = body !== null || ctx.requireBody === true;
+  if (body === null && ctx.requireBody === true) errors.body = "כתבו כמה מילים על המוצר.";
   if (body !== null) {
     const length = charLength(body);
     if (length < limits.minChars) {
@@ -153,7 +160,7 @@ export function validateReview(input: ReviewInput, ctx: ReviewContext): Validati
   if (!answers.ok) Object.assign(errors, answers.errors);
 
   let purchaseMonth: string | null = null;
-  if (body !== null) {
+  if (publishing) {
     if (answers.ok) {
       for (const key of ctx.requiredAnswers) {
         if ((answers.value as Record<string, unknown>)[key] === undefined) {
