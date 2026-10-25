@@ -22,6 +22,7 @@ const KINDS: { kind: NotificationKind; label: string }[] = [
   { kind: "new_review_on_watch", label: "ביקורת חדשה על מוצר במעקב" },
   { kind: "my_review_activity", label: "סימוני מועיל על הביקורות שלי" },
   { kind: "moderation_decision", label: "החלטה על דיווח או ביקורת שלי" },
+  { kind: "weekly_digest", label: "סיכום שבועי של שינויי מחיר במעקבים שלי" },
   { kind: "pending_review_reminder", label: "תזכורת לכתוב ביקורת על מה שקניתי" },
   { kind: "durability_reminder", label: "תזכורת לעדכן ביקורת אחרי כמה חודשים" },
 ];

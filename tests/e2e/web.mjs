@@ -287,18 +287,37 @@ await check("an admin sees the overview, the stores with detection rate and emer
 
   await page.getByRole("tab", { name: "משתמשים" }).click();
   await page.getByText("בודק_א").waitFor();
+  await page.getByRole("tab", { name: "מעקבים והתראות" }).click();
+  await page.getByText("מעקבים פעילים").waitFor();
+  t = await text(page);
+  for (const expected of ["14", "התראות שנשלחו", "כשלי שליחה", "telegram 403", "מחיר יעד", "אחוז הקלקה לא נמדד"]) assert.ok(t.includes(expected), `tracking: missing "${expected}"`);
+  await shot(page, "admin-tracking");
+
+  await page.getByRole("tab", { name: "ניתוח נתונים" }).click();
+  await page.getByRole("heading", { name: "משפך" }).waitFor();
+  await page.getByText("Terminal X").first().waitFor();
+  t = await text(page);
+  for (const expected of ["התקנות", "צפייה ראשונה בעמוד מוצר", "הרשמות", "מעקבים", "לפי חנות", "לפי פלטפורמה", "שימור לפי שבוע התקנה", "50%", "גבול תחתון"]) assert.ok(t.includes(expected), `analytics: missing "${expected}"`);
+  await shot(page, "admin-analytics");
+  const [download] = await Promise.all([page.waitForEvent("download"), page.getByRole("button", { name: "ייצוא CSV" }).click()]);
+  assert.match(download.suggestedFilename(), /^smartbuy-analytics-30d\.csv$/);
+  await page.getByLabel("תקופה").selectOption("7");
+  await page.getByRole("heading", { name: "משפך" }).waitFor();
+
   await page.getByRole("tab", { name: "יומן" }).click();
   await page.getByText("ספאם ברור").waitFor();
   assert.deepEqual(page.problems, [], page.problems.join("\n"));
   await close(page);
 });
 
-await check("a moderator does not get the overview, the audit log or the emergency stop", async () => {
+await check("a moderator does not get the overview, the tracking and analytics screens, the audit log or the emergency stop", async () => {
   mock.state.role = "moderator";
   const page = await open("/admin", { signedIn: true });
   await page.getByRole("tab", { name: "פיקוח" }).waitFor();
   assert.equal(await page.getByRole("tab", { name: "סקירה" }).count(), 0);
   assert.equal(await page.getByRole("tab", { name: "יומן" }).count(), 0);
+  assert.equal(await page.getByRole("tab", { name: "ניתוח נתונים" }).count(), 0);
+  assert.equal(await page.getByRole("tab", { name: "מעקבים והתראות" }).count(), 0);
   await page.getByRole("tab", { name: "חנויות" }).click();
   assert.equal(await page.getByRole("button", { name: "כיבוי חירום" }).count(), 0);
   await close(page);

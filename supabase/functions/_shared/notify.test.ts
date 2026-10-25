@@ -149,6 +149,16 @@ describe("message text", () => {
     expect(describeItem(item(5, "pending_review_reminder", { count: 4 }))).toBe("4 מוצרים שקניתם מחכים לביקורת.");
   });
 
+  it("summarises the week's price changes and names at most five products", () => {
+    const changes = Array.from({ length: 7 }, (_, i) => ({ name: `מוצר ${i + 1}`, from: 200, to: 150 }));
+    const text = describeItem(item(6, "weekly_digest", { watching: 9, changes }));
+    expect(text).toContain("7 מוצרים השתנו מתוך 9 במעקב");
+    expect(text).toContain("מוצר 1: ₪200 → ₪150");
+    expect(text).not.toContain("מוצר 6");
+    expect(text).toContain("ועוד 2");
+    expect(describeItem(item(7, "weekly_digest", { watching: 1, changes: [{ name: "x", from: 10, to: 9 }] }))).toContain("מוצר אחד השתנה מתוך 1 במעקב");
+  });
+
   it("uses a single line for one item and a list for several, and only links to https addresses", () => {
     expect(buildMessage([item(1, "restock")])).toMatchObject({ title: "SmartBuy", url: "https://www.terminalx.com/w817260002" });
     expect(buildMessage([item(1, "restock"), item(2, "restock")]).text.startsWith("• ")).toBe(true);

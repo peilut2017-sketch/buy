@@ -43,7 +43,7 @@ export function startMock(port) {
     { observed_at: new Date(Date.now() - 10 * DAY).toISOString(), price: 149.9, in_stock: true },
   ];
   const WATCH_PRODUCT = { name: "מכנסי בדיקה", url: "https://www.terminalx.com/w817260002", site_id: "terminalx", parent_sku: "w81726" };
-  const COUNTS = { install: 12, product_view: 340, panel_open: 55, review_submitted: 9, detect_failed: 4 };
+  const COUNTS = { install: 12, first_product_view: 10, product_view: 340, panel_open: 55, signup: 6, review_submitted: 9, watch_created: 3, detect_failed: 4 };
 
   const server = createServer(async (req, res) => {
     const url = new URL(req.url, `http://127.0.0.1:${port}`);
@@ -74,7 +74,7 @@ export function startMock(port) {
     if (req.method === "HEAD") {
       const table = p.split("/").pop();
       const eventName = q("event");
-      const n = table === "events" ? COUNTS[eventName] ?? 0 : table === "reports" ? state.reports.length : table === "appeals" ? state.appeals.length : table === "takedown_requests" ? state.takedowns.length : 0;
+      const n = table === "events" ? COUNTS[eventName] ?? 0 : table === "watches" ? 14 : table === "notification_log" ? (q("status") === "failed" ? 2 : q("channel") === "extension" ? 30 : q("channel") ? 5 : 40) : table === "reports" ? state.reports.length : table === "appeals" ? state.appeals.length : table === "takedown_requests" ? state.takedowns.length : 0;
       return send(200, undefined, { "content-range": `0-0/${n}` });
     }
     if (p === "/rest/v1/sites" && req.method === "PATCH") {
@@ -130,6 +130,8 @@ export function startMock(port) {
       }
       return send(200, state.prefs);
     }
+    if (p === "/rest/v1/notification_log") return send(200, [{ id: 1, channel: "telegram", kind: "price_target", error: "telegram 403", sent_at: "2026-10-24T09:00:00Z" }]);
+    if (p === "/rest/v1/admin_retention") return send(200, [{ cohort: "2026-10-05", installs: 8, week_1: 4, week_4: 2, week_12: 0 }]);
     if (p === "/rest/v1/notification_channels") return send(200, []);
     if (p === "/functions/v1/report-prices") {
       state.priceReports.push(JSON.parse(body || "{}"));

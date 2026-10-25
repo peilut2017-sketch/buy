@@ -229,6 +229,40 @@ describe.skipIf(!TEST_DB_URL)("phase 2 on PostgreSQL", () => {
     });
   });
 
+  describe("weekly digest", () => {
+    async function pricedWatch(user: keyof typeof USERS, before: number, now: number) {
+      await price(INSTALL_A, before);
+      const vid = await variantId();
+      await db.raw`update public.price_events set observed_at = ${new Date(NOW.getTime() - 10 * 86_400_000).toISOString()} where variant_id = ${vid}`;
+      await price(INSTALL_B, now);
+      await db.raw`update public.price_events set observed_at = ${new Date(NOW.getTime() - 2 * 86_400_000).toISOString()} where variant_id = ${vid} and price = ${now}`;
+      const pid = await productId();
+      await db.raw`insert into public.watches (user_id, product_id, variant_id, target_price) values (${USERS[user]}, ${pid}, ${vid}, ${before - 100})`;
+    }
+    const digest = () => db.raw`select enqueue_weekly_digest(${NOW.toISOString()}::timestamptz)`.then(() => queue()).then((rows) => rows.filter((r) => r.kind === "weekly_digest"));
+
+    beforeEach(async () => {
+      await db.raw`truncate public.watches, public.price_events restart identity cascade`;
+    });
+
+    it("is off by default, and on request names the products whose price changed in the week, once", async () => {
+      await pricedWatch("alice", 200, 150);
+      expect(await digest()).toHaveLength(0);
+      await db.raw`update public.notification_prefs set enabled = true where user_id = ${USERS.alice} and kind = 'weekly_digest'`;
+      const rows = await digest();
+      expect(rows).toHaveLength(1);
+      expect(rows[0]!.user_id).toBe(USERS.alice);
+      expect(rows[0]!.payload).toMatchObject({ watching: 1, changes: [{ from: 200, to: 150 }] });
+      expect(await digest()).toHaveLength(1);
+    });
+
+    it("says nothing when no watched price moved", async () => {
+      await pricedWatch("alice", 150, 150);
+      await db.raw`update public.notification_prefs set enabled = true where user_id = ${USERS.alice} and kind = 'weekly_digest'`;
+      expect(await digest()).toHaveLength(0);
+    });
+  });
+
   describe("send-notifications", () => {
     beforeEach(async () => {
       sent.length = 0;

@@ -177,8 +177,13 @@ export function describe(item: QueuedItem): string {
       return `${p.count === 1 ? "מוצר אחד שקניתם מחכה" : `${p.count} מוצרים שקניתם מחכים`} לביקורת.`;
     case "durability_reminder":
       return `${name(p)}: איך המוצר מחזיק אחרי כמה חודשים? אפשר להוסיף עדכון לביקורת.`;
-    case "weekly_digest":
-      return "סיכום שבועי.";
+    case "weekly_digest": {
+      const changes = Array.isArray(p.changes) ? (p.changes as Record<string, unknown>[]) : [];
+      if (changes.length === 0) return "סיכום שבועי: אין שינויי מחיר במוצרים שאתם עוקבים אחריהם.";
+      const lines = changes.slice(0, 5).map((c) => `${name(c)}: ${price(c.from) ?? "?"} → ${price(c.to) ?? "?"}`);
+      const more = changes.length > 5 ? ` ועוד ${changes.length - 5}` : "";
+      return `סיכום שבועי, ${changes.length === 1 ? "מוצר אחד השתנה" : `${changes.length} מוצרים השתנו`} מתוך ${p.watching ?? changes.length} במעקב: ${lines.join("; ")}${more}.`;
+    }
   }
 }
 

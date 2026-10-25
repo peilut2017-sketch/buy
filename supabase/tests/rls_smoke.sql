@@ -430,7 +430,7 @@ begin
   set local role anon;
   assert (select count(*) from public.product_links) = 2, 'low-confidence links stay hidden until confirmed, medium shows';
   assert (select count(*) from public.sites where status = 'paused') = 1, 'a paused site stays readable so clients can stop';
-  assert (select count(*) from public.settings) = 6, 'only public settings are readable';
+  assert (select count(*) from public.settings) = 8, 'only public settings are readable';
   assert (select count(*) from public.category_questions where product_type = 'apparel') = 5, 'apparel has five questions';
   assert (select count(*) from public.category_questions where product_type = 'footwear') = 5, 'footwear has five questions';
   assert (select count(*) from public.category_questions where product_type = 'general' and question_key = 'fit') = 0, 'general has no fit question';
@@ -458,7 +458,7 @@ begin
   assert (select adapter_version from public.sites where id = 'terminalx') = v, 'a rename does not bump adapter_version';
   update public.sites set adapter_config = '{"rules":1}' where id = 'terminalx';
   assert (select adapter_version from public.sites where id = 'terminalx') = v + 1, 'changing adapter_config bumps adapter_version';
-  assert (select count(*) from public.settings) = 7, 'an admin sees private settings too';
+  assert (select count(*) from public.settings) = 9, 'an admin sees private settings too';
   update public.settings set value = '{"x":2}' where key = 'internal_only';
   assert (select count(*) from public.admin_audit_log where target_type = 'sites') = 2, 'site edits are audited';
   assert (select count(*) from public.admin_audit_log where target_type = 'settings' and target_id = 'internal_only') = 1, 'settings edits are audited';
@@ -478,6 +478,44 @@ begin
   perform set_config('request.jwt.claim.sub', adam::text, true);
   set local role authenticated;
   assert (select count(*) from public.events) = 0, 'a blocked admin has no admin rights';
+  reset role;
+end $$;
+
+-- ---------------------------------------------------------------- admin analytics (0004)
+do $$
+declare
+  alice constant uuid := 'a0000000-0000-0000-0000-000000000001';
+  mia   constant uuid := 'c0000000-0000-0000-0000-000000000003';
+  bob   constant uuid := 'b0000000-0000-0000-0000-000000000002';
+  adam  constant uuid := 'd0000000-0000-0000-0000-000000000004';
+  total int;
+begin
+  update public.profiles set blocked_at = null where id = adam;
+  insert into public.watches (user_id, product_id, variant_id, notify_restock) values (alice, 4, null, true);
+  assert (select count(*) from public.events where event = 'watch_created' and user_id = alice and product_id = 4) = 1, 'a watch logs one watch_created event';
+
+  insert into public.events (event, platform, install_id, occurred_at) values
+    ('install', 'extension', 'inst-1', now() - interval '20 days'),
+    ('install', 'extension', 'inst-2', now() - interval '20 days'),
+    ('panel_open', 'extension', 'inst-1', now() - interval '12 days');
+
+  select count(*) into total from public.watches;
+  perform set_config('request.jwt.claim.sub', adam::text, true);
+  set local role authenticated;
+  assert (select count(*) from public.watches) = total and total >= 2, 'an admin reads every watch';
+  assert (select installs from public.admin_retention limit 1) = 2, 'retention counts installs per weekly cohort';
+  assert (select week_1 from public.admin_retention limit 1) = 1, 'retention counts installs that opened the panel in week one';
+  reset role;
+
+  perform set_config('request.jwt.claim.sub', mia::text, true);
+  set local role authenticated;
+  assert (select count(*) from public.watches where user_id <> mia) = 0, 'a moderator does not read other people''s watches';
+  assert (select count(*) from public.admin_retention) = 0, 'a moderator sees no retention data';
+  reset role;
+
+  perform set_config('request.jwt.claim.sub', bob::text, true);
+  set local role authenticated;
+  assert (select count(*) from public.notification_log) = 0, 'a user does not read other people''s notification log';
   reset role;
 end $$;
 

@@ -3,14 +3,17 @@ import { ApiError, callFunction, rest, restCount, type Identity } from "@smartbu
 import { Button, ChoiceGroup, Notice, RequireAccount, Segmented, SelectField, Skel, TextArea, TextField, useResource } from "@smartbuy/ui";
 import { useState } from "preact/hooks";
 import { boot, setTitle } from "../lib/boot.tsx";
+import { AnalyticsPanel, TrackingPanel } from "../lib/AdminInsights.tsx";
 import { Shell } from "../shell.tsx";
 
-type Tab = "overview" | "stores" | "moderation" | "users" | "audit";
+type Tab = "overview" | "stores" | "moderation" | "users" | "tracking" | "analytics" | "audit";
 const TABS: { id: Tab; label: string }[] = [
   { id: "overview", label: "סקירה" },
   { id: "stores", label: "חנויות" },
   { id: "moderation", label: "פיקוח" },
   { id: "users", label: "משתמשים" },
+  { id: "tracking", label: "מעקבים והתראות" },
+  { id: "analytics", label: "ניתוח נתונים" },
   { id: "audit", label: "יומן" },
 ];
 
@@ -361,6 +364,8 @@ function Panels({ identity, role }: { identity: Identity; role: "moderator" | "a
         {current === "stores" && <Stores identity={identity} isAdmin={isAdmin} />}
         {current === "moderation" && <Moderation identity={identity} />}
         {current === "users" && <Users identity={identity} isAdmin={isAdmin} />}
+        {current === "tracking" && <TrackingPanel identity={identity} />}
+        {current === "analytics" && <AnalyticsPanel identity={identity} />}
         {current === "audit" && <Audit identity={identity} />}
       </div>
     </div>
