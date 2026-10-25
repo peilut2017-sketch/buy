@@ -213,6 +213,7 @@ export function ReviewsView({ target, identity, getIdentity, version, onWrite, o
                 onDelete={onDelete}
                 onAppeal={onAppeal}
                 onUpdate={onUpdate}
+                variantOrder={[target.colorGroup, target.sizeGroup]}
               />
             </div>
           ))}

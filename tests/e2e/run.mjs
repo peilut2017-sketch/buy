@@ -274,6 +274,26 @@ await check("reviews can be filtered by colour, with a count per colour", async 
   await panel.close();
 });
 
+await check("each review says which colour and size was bought, and a colour picked on the page reaches the review form", async () => {
+  const { product, panel } = await openPanel("w817260002");
+  await panel.waitForSelector(".sb-review");
+  const first = await panel.locator(".sb-review").first().innerText();
+  assert.ok(first.includes("נרכש: צבע: כחול · מידה: M"), first);
+  await product.close();
+  await panel.close();
+
+  // The page changes its address first and its markup a moment later.
+  const page = await productPage("w817260002", "?variants=1");
+  await stripOf(page);
+  const tabId = await tabIdOf(page);
+  const read = () => worker.evaluate(async (id) => (await chrome.storage.session.get(`tab:${id}`))[`tab:${id}`]?.product?.variantValues, tabId);
+  assert.deepEqual(await read(), { "צבע": "ורוד עתיק", "מידה": "M" });
+  await page.locator("#colors > div").nth(1).click();
+  await page.waitForTimeout(1800);
+  assert.deepEqual(await read(), { "צבע": "לבן", "מידה": "M" });
+  await page.close();
+});
+
 await check("acting without an account asks for sign-in instead of failing", async () => {
   const { product, panel } = await openPanel("w817260002");
   await panel.waitForSelector(".sb-review");

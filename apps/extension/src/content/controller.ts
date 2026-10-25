@@ -45,7 +45,10 @@ export class PageController {
       if (run !== this.runId) return;
       const url = new URL(this.win.location.href);
       const reading = readPage(this.site, this.doc, url, config.config);
-      if (reading.product && isDetected(reading.detection) && !reading.detection.conflict) return this.show(reading.product, run);
+      if (reading.product && isDetected(reading.detection) && !reading.detection.conflict) {
+        if (this.shown === reading.product.sku && this.strip) return void this.syncVariants(reading.product, config.config, run);
+        return this.show(reading.product, run);
+      }
       settled = reading;
       if (isReportableFailure(reading.detection)) this.reportOnce(url.pathname, reading.detection);
     }
@@ -62,6 +65,22 @@ export class PageController {
     this.strip?.unmount();
     this.strip = null;
   }
+
+  /**
+   * A colour or size chosen on the page changes the address and the markup without a page load. The page re-renders a
+   * moment after the address changes, so the choice is read again after a short wait and sent only when it differs.
+   */
+  private async syncVariants(product: ProductSnapshot, cfg: SiteConfigResult["config"], run: number): Promise<void> {
+    await new Promise((r) => setTimeout(r, 700));
+    if (run !== this.runId || this.shown !== product.sku) return;
+    const latest = readPage(this.site, this.doc, new URL(this.win.location.href), cfg).product;
+    if (!latest || latest.sku !== product.sku) return;
+    if (JSON.stringify(latest.variantValues) === JSON.stringify(this.lastVariants ?? product.variantValues)) return;
+    this.lastVariants = latest.variantValues;
+    void send("product-updated", { product: latest }).catch(() => undefined);
+  }
+
+  private lastVariants: Record<string, string> | null = null;
 
   private async loadConfig(): Promise<SiteConfigResult> {
     if (this.config) return this.config;
@@ -82,6 +101,7 @@ export class PageController {
     if (this.shown === product.sku && this.strip) return;
     this.clearStripOnly();
     this.shown = product.sku;
+    this.lastVariants = product.variantValues;
     this.price = null;
     this.advice = null;
     void send("product-detected", { product }).catch(() => undefined);

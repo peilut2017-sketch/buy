@@ -41,6 +41,7 @@ export interface DetectFailure {
 interface Requests {
   "site-config": { req: { siteId: string }; res: SiteConfigResult };
   "product-detected": { req: { product: ProductSnapshot }; res: { ok: true } };
+  "product-updated": { req: { product: ProductSnapshot }; res: { ok: true } };
   "product-cleared": { req: Record<string, never>; res: { ok: true } };
   summary: { req: { siteId: string; parentSku: string }; res: { summary: ProductSummary | null } };
   "open-panel": { req: { mode: PanelMode }; res: { ok: boolean } };

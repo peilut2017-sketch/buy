@@ -28,6 +28,7 @@ function pageFor(url) {
     name: q.get("name") ?? "מכנסי בדיקה",
     image: q.get("noimage") === null,
     hostile: q.get("hostile") !== null,
+    variants: q.get("variants") !== null,
   });
 }
 

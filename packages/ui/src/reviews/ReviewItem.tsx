@@ -16,6 +16,8 @@ export interface ReviewItemProps {
   onDelete: (review: ReviewView) => void;
   onAppeal: (review: ReviewView) => void;
   onUpdate: (review: ReviewView) => void;
+  /** Variant groups to show first (colour, then size), from the store's adapter config. */
+  variantOrder?: readonly (string | null | undefined)[];
 }
 
 function VerificationChip({ review }: { review: ReviewView }) {
@@ -24,11 +26,11 @@ function VerificationChip({ review }: { review: ReviewView }) {
   return <Chip>{VERIFICATION_LABEL.unverified}</Chip>;
 }
 
-export function ReviewItem({ review, now, busy, onHelpful, onReport, onEdit, onDelete, onAppeal, onUpdate }: ReviewItemProps) {
+export function ReviewItem({ review, now, busy, onHelpful, onReport, onEdit, onDelete, onAppeal, onUpdate, variantOrder }: ReviewItemProps) {
   const [expanded, setExpanded] = useState(false);
   const timing = reviewTiming(review, now);
   const facts = answerFacts(review.answers);
-  const variant = variantText(review.variantValues);
+  const variant = variantText(review.variantValues, variantOrder);
   const long = review.body.length > LONG_TEXT;
 
   return (
@@ -61,7 +63,7 @@ export function ReviewItem({ review, now, busy, onHelpful, onReport, onEdit, onD
         </p>
       )}
 
-      {variant && <p class="sb-t-support sb-secondary">{variant}</p>}
+      {variant && <p class="sb-t-support sb-secondary">נרכש: {variant}</p>}
       {review.title && <h2 class="sb-t-heading">{review.title}</h2>}
 
       <p class={long && !expanded ? "sb-review__body sb-review__body--clamped" : "sb-review__body"}>{review.body}</p>

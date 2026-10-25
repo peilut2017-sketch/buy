@@ -87,6 +87,17 @@ export default defineBackground(() => {
         return true;
       }
 
+      case "product-updated": {
+        // The person picked another colour or size without a page load: keep the snapshot current, count nothing.
+        if (tabId === undefined) return false;
+        void (async () => {
+          const state = (await getSession<TabState>(tabKey(tabId))) ?? { product: null, mode: null };
+          if (state.product?.sku === message.product.sku) await setSession(tabKey(tabId), { ...state, product: message.product } satisfies TabState);
+          sendResponse({ ok: true });
+        })();
+        return true;
+      }
+
       case "product-cleared": {
         if (tabId === undefined) return false;
         void (async () => {

@@ -65,8 +65,15 @@ export function answerFacts(answers: Record<string, unknown>): string[] {
   return facts;
 }
 
-export function variantText(values: Record<string, string>): string {
+/** What the buyer bought, for example "צבע: כחול · מידה: M". The groups named in `order` come first, in that order. */
+export function variantText(values: Record<string, string>, order: readonly (string | null | undefined)[] = []): string {
+  const rank = (name: string) => {
+    const i = order.indexOf(name);
+    return i === -1 ? order.length : i;
+  };
   return Object.entries(values)
+    .filter(([, v]) => v.trim() !== "")
+    .sort(([a], [b]) => rank(a) - rank(b))
     .map(([k, v]) => `${k}: ${v}`)
     .join(" · ");
 }
