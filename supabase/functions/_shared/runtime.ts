@@ -1,9 +1,12 @@
 // Deno entry plumbing for the Edge Functions: CORS, the JSON body, who is calling, and the database connection.
 // This is the only file that touches Deno, fetch to the auth service, or the Postgres driver; handlers stay pure.
 
+import * as hebcal from "npm:@hebcal/core@5";
 import postgres from "npm:postgres@3";
 import { fail, type AuthUser, type HttpResult } from "./http.ts";
 import type { Ctx, Handler } from "./handlers/context.ts";
+import { createSenders } from "./senders.ts";
+import type { HebcalLike } from "./shabbat.ts";
 import { createStore, type Sql } from "./store.sql.ts";
 
 declare const Deno: {
@@ -46,6 +49,14 @@ async function deleteAuthUser(userId: string): Promise<void> {
   if (!res.ok) throw new Error(`could not delete user (${res.status})`);
 }
 
+/** Compares without stopping at the first difference, so the time taken does not reveal how much matched. */
+function sameSecret(a: string, b: string): boolean {
+  if (a.length !== b.length || a.length === 0) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return diff === 0;
+}
+
 const json = (result: HttpResult): Response =>
   new Response(JSON.stringify(result.body), { status: result.status, headers: { ...CORS, "content-type": "application/json" } });
 
@@ -62,11 +73,26 @@ export function serveHandler(handler: Handler): void {
     }
 
     try {
+      const bearer = (req.headers.get("authorization") ?? "").replace(/^Bearer /, "");
+      const isService = sameSecret(bearer, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "");
       const ctx: Ctx = {
-        user: await userFromToken(req),
+        user: isService ? null : await userFromToken(req),
         now: new Date(),
         store: createStore(database(), { deleteAuthUser }),
         pepper: Deno.env.get("ORDER_HASH_PEPPER"),
+        isService,
+        webhookVerified: sameSecret(req.headers.get("x-telegram-bot-api-secret-token") ?? "", Deno.env.get("TELEGRAM_WEBHOOK_SECRET") ?? ""),
+        senders: createSenders({
+          fetch: (url, init) => fetch(url, init),
+          telegramToken: Deno.env.get("TELEGRAM_BOT_TOKEN"),
+          resendKey: Deno.env.get("RESEND_API_KEY"),
+          emailFrom: Deno.env.get("EMAIL_FROM"),
+          settingsUrl: Deno.env.get("WEBSITE_URL") ? `${Deno.env.get("WEBSITE_URL")}/account` : undefined,
+        }),
+        hebcal: hebcal as unknown as HebcalLike,
+        telegramBotUsername: Deno.env.get("TELEGRAM_BOT_USERNAME"),
+        adminChatId: Deno.env.get("ADMIN_TELEGRAM_CHAT_ID"),
+        websiteUrl: Deno.env.get("WEBSITE_URL"),
       };
       return json(await handler(ctx, body));
     } catch (error) {

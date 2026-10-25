@@ -21,6 +21,7 @@ import type {
   TakedownRow,
 } from "./store.ts";
 import { DEFAULT_SETTINGS } from "./store.ts";
+import type { ChannelName, ChannelRow, PrefsByKind, QueuedItem } from "./notify.ts";
 import type { ReportReason } from "./validation.ts";
 
 // deno-lint-ignore no-explicit-any
@@ -62,6 +63,7 @@ function mergeSettings(rows: Row[]): Settings {
   const wave = byKey.get("review_wave") ?? {};
   const notes = byKey.get("notifications") ?? {};
   const extra = byKey.get("moderation_limits") ?? {};
+  const prices = byKey.get("price_reports") ?? {};
   return {
     reviewLimits: {
       perDay: limits.per_day ?? d.reviewLimits.perDay,
@@ -79,6 +81,13 @@ function mergeSettings(rows: Row[]): Settings {
     notifications: { pendingAfterDeliveryDays: notes.pending_after_delivery_days ?? d.notifications.pendingAfterDeliveryDays },
     reportsPerDay: extra.reports_per_day ?? d.reportsPerDay,
     updatesPerReview: extra.updates_per_review ?? d.updatesPerReview,
+    priceReports: {
+      perInstallPerDay: prices.per_install_per_day ?? d.priceReports.perInstallPerDay,
+      outlierRatio: prices.outlier_ratio ?? d.priceReports.outlierRatio,
+      confirmations: prices.confirmations ?? d.priceReports.confirmations,
+      windowHours: prices.window_hours ?? d.priceReports.windowHours,
+      historyDays: prices.history_days ?? d.priceReports.historyDays,
+    },
   };
 }
 
@@ -363,6 +372,156 @@ export function createStore(sql: Sql, options: StoreOptions): Store {
         profile: profile ?? null,
         reviews, reviewUpdates: updates, helpfulVotes: votes, sizeProfiles: sizes, watches,
         notificationChannels: channels, notificationPrefs: prefs, reportsFiled: reports, appeals, orders, pendingReviews: pending,
+      };
+    },
+
+    // ---- phase 2: price reports
+    async findVariant(productId, sku) {
+      const [r] = await sql`select id from public.variants where product_id = ${productId} and sku = ${sku}`;
+      return r ? Number(r.id) : null;
+    },
+
+    async countPriceEventsByInstallSince(installHash, sinceIso) {
+      const [r] = await sql`select count(*)::int as n from public.price_events where install_hash = ${installHash} and observed_at >= ${sinceIso}`;
+      return r!.n;
+    },
+
+    async lastPrice(variantId) {
+      const [r] = await sql`select price, in_stock from public.price_events where variant_id = ${variantId} order by id desc limit 1`;
+      return r ? { price: r.price === null ? null : Number(r.price), inStock: r.in_stock } : null;
+    },
+
+    async recentPrices(variantId, limit) {
+      const rows = await sql`select price from public.price_events where variant_id = ${variantId} and price is not null order by id desc limit ${limit}`;
+      return rows.map((r) => Number(r.price));
+    },
+
+    async countOutlierConfirmations(variantId, price, sinceIso, excludeInstallHash) {
+      const [r] = await sql`
+        select count(distinct install_hash)::int as n from public.price_outlier_candidates
+        where variant_id = ${variantId} and price = ${price} and observed_at >= ${sinceIso} and install_hash <> ${excludeInstallHash}`;
+      return r!.n;
+    },
+
+    async addOutlierCandidate(i) {
+      await sql`insert into public.price_outlier_candidates (variant_id, price, in_stock, install_hash, observed_at) values (${i.variantId}, ${i.price}, ${i.inStock}, ${i.installHash}, ${i.now}) on conflict do nothing`;
+    },
+
+    async clearOutlierCandidates(variantId, price) {
+      await sql`delete from public.price_outlier_candidates where variant_id = ${variantId} and price = ${price}`;
+    },
+
+    async insertPriceEvent(i) {
+      await sql`insert into public.price_events (variant_id, price, currency, in_stock, observed_at, source, install_hash) values (${i.variantId}, ${i.price}, ${i.currency}, ${i.inStock}, ${i.now}, 'user_report', ${i.installHash})`;
+    },
+
+    // ---- phase 2: notifications
+    async enqueueReminders(now) {
+      await sql`select public.enqueue_reminders(${now}::timestamptz)`;
+    },
+
+    async listUsersWithQueued(limit) {
+      const rows = await sql`select user_id from public.notification_queue where status = 'queued' group by user_id order by min(created_at) limit ${limit}`;
+      return rows.map((r) => r.user_id as string);
+    },
+
+    async listQueuedForUser(userId): Promise<QueuedItem[]> {
+      const rows = await sql`select id, kind, payload, created_at from public.notification_queue where user_id = ${userId} and status = 'queued' order by id`;
+      return rows.map((r) => ({ id: Number(r.id), kind: r.kind, payload: r.payload, createdAt: iso(r.created_at) }));
+    },
+
+    async getNotifyContext(userId, dayStartIso) {
+      const [p] = await sql`select quiet_mode, quiet_hours, shabbat_mode, shabbat_city, daily_notification_cap from public.profiles where id = ${userId}`;
+      const prefRows = await sql`select kind, channels, enabled from public.notification_prefs where user_id = ${userId}`;
+      const channelRows = await sql`select channel, enabled, verified, address from public.notification_channels where user_id = ${userId}`;
+      const [sent] = await sql`
+        select count(distinct payload ->> 'batchId')::int as n from public.notification_log
+        where user_id = ${userId} and status = 'sent' and sent_at >= ${dayStartIso}`;
+      const prefs: PrefsByKind = {};
+      for (const r of prefRows) prefs[r.kind] = { enabled: r.enabled, channels: r.channels as ChannelName[] };
+      const channels: ChannelRow[] = channelRows.map((r) => ({ channel: r.channel, enabled: r.enabled, verified: r.verified, address: r.address }));
+      return {
+        settings: {
+          quietMode: p?.quiet_mode ?? false,
+          quietHours: p?.quiet_hours ?? null,
+          shabbatMode: p?.shabbat_mode ?? false,
+          shabbatCity: p?.shabbat_city ?? null,
+          dailyCap: p?.daily_notification_cap ?? 3,
+        },
+        prefs,
+        channels,
+        messagesToday: sent!.n,
+      };
+    },
+
+    async markQueue(ids, status) {
+      if (ids.length === 0) return;
+      await sql`update public.notification_queue set status = ${status} where id = any(${ids}::bigint[])`;
+    },
+
+    async logNotification(i) {
+      await sql`insert into public.notification_log (user_id, channel, kind, payload, status, error, sent_at) values (${i.userId}, ${i.channel}, ${i.kind}, ${sql.json(i.payload)}, ${i.status}, ${i.error}, ${i.now})`;
+    },
+
+    async listExtensionPending(userId, limit) {
+      const rows = await sql`
+        select id, payload from public.notification_log
+        where user_id = ${userId} and channel = 'extension' and status = 'sent' and extension_shown_at is null
+        order by id limit ${limit}`;
+      return rows.map((r) => ({ id: Number(r.id), title: String(r.payload.title ?? "SmartBuy"), text: String(r.payload.text ?? ""), url: typeof r.payload.url === "string" ? r.payload.url : null }));
+    },
+
+    async ackExtension(userId, ids, now) {
+      if (ids.length === 0) return;
+      await sql`update public.notification_log set extension_shown_at = ${now} where user_id = ${userId} and channel = 'extension' and id = any(${ids}::bigint[])`;
+    },
+
+    // ---- phase 2: channels
+    async createTelegramToken(userId) {
+      await sql`delete from public.telegram_link_tokens where user_id = ${userId}`;
+      const [r] = await sql`insert into public.telegram_link_tokens (user_id) values (${userId}) returning token`;
+      return r!.token as string;
+    },
+
+    async consumeTelegramToken(token, now) {
+      const rows = await sql`delete from public.telegram_link_tokens where token = ${token} returning user_id, expires_at`;
+      const r = rows[0];
+      return r && new Date(r.expires_at).getTime() > Date.parse(now) ? (r.user_id as string) : null;
+    },
+
+    async upsertChannel(i) {
+      await sql`
+        insert into public.notification_channels (user_id, channel, address, verified, enabled) values (${i.userId}, ${i.channel}, ${i.address}, ${i.verified}, ${i.enabled})
+        on conflict (user_id, channel) do update set address = excluded.address, verified = excluded.verified, enabled = excluded.enabled`;
+    },
+
+    async disableChannelByAddress(channel, address) {
+      const rows = await sql`update public.notification_channels set enabled = false where channel = ${channel} and address = ${address} returning user_id`;
+      return rows.length;
+    },
+
+    // ---- phase 2: admin alerts
+    async getPrivateSetting(key) {
+      const [r] = await sql`select value from public.settings where key = ${key}`;
+      return r ? (r.value as Record<string, unknown>) : null;
+    },
+
+    async setPrivateSetting(key, value) {
+      await sql`insert into public.settings (key, value, is_public) values (${key}, ${sql.json(value)}, false) on conflict (key) do update set value = excluded.value`;
+    },
+
+    async adminStats(sinceIso) {
+      const perSite = await sql`
+        select site_id, count(*) filter (where event = 'product_view')::int as views, count(*) filter (where event = 'detect_failed')::int as failed
+        from public.events where occurred_at >= ${sinceIso} and site_id is not null group by site_id`;
+      const [failed] = await sql`select count(*)::int as n from public.notification_log where status = 'failed' and sent_at >= ${sinceIso}`;
+      const [reports] = await sql`select count(*)::int as n from public.reports where created_at >= ${sinceIso}`;
+      const [waves] = await sql`select count(*)::int as n from public.review_flags where reason = 'review_wave' and created_at >= ${sinceIso}`;
+      return {
+        perSite: perSite.map((r) => ({ siteId: r.site_id, views: r.views, failed: r.failed })),
+        failedNotifications: failed!.n,
+        newReports: reports!.n,
+        newWaveFlags: waves!.n,
       };
     },
 

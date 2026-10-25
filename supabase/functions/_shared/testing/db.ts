@@ -2,7 +2,7 @@
 // Set SB_TEST_DB_URL to a server you may create databases on, for example
 //   postgres://postgres@127.0.0.1:5432/postgres
 // Without it the integration tests are skipped. On plain Postgres the Supabase stand-in (tests/local_stub.sql) is applied first.
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import postgres from "postgres";
 import type { Sql } from "../store.sql.ts";
@@ -27,7 +27,11 @@ export async function createTestDb(): Promise<TestDb> {
 
   const hasSupabase = (await raw`select 1 from information_schema.schemata where schema_name = 'auth'`).length > 0;
   if (!hasSupabase) await raw.unsafe(readFileSync(resolve(root, "supabase/tests/local_stub.sql"), "utf8"));
-  await raw.unsafe(readFileSync(resolve(root, "supabase/migrations/0001_init.sql"), "utf8"));
+  // Every migration, in order, exactly as a real project would apply them.
+  const migrations = resolve(root, "supabase/migrations");
+  for (const file of readdirSync(migrations).filter((f) => f.endsWith(".sql")).sort()) {
+    await raw.unsafe(readFileSync(resolve(migrations, file), "utf8"));
+  }
 
   return {
     sql: raw as unknown as Sql,

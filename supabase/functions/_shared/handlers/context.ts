@@ -1,5 +1,7 @@
 import type { AuthUser, HttpResult } from "../http.ts";
 import { BLOCKED, UNAUTHENTICATED, fail } from "../http.ts";
+import type { HebcalLike } from "../shabbat.ts";
+import type { Senders } from "../senders.ts";
 import type { ProfileRow, Store } from "../store.ts";
 
 export interface Ctx {
@@ -7,8 +9,18 @@ export interface Ctx {
   user: AuthUser | null;
   now: Date;
   store: Store;
-  /** Server secret for hashing order numbers. */
+  /** Server secret for hashing order numbers and install ids. */
   pepper?: string;
+  /** The call carries the service key: it comes from the scheduler, not from a user. */
+  isService?: boolean;
+  /** Telegram's secret header matched, so the request really comes from Telegram. */
+  webhookVerified?: boolean;
+  senders?: Senders;
+  hebcal?: HebcalLike;
+  telegramBotUsername?: string;
+  /** Telegram chat that receives admin alerts. */
+  adminChatId?: string;
+  websiteUrl?: string;
 }
 
 export type Handler = (ctx: Ctx, body: unknown) => Promise<HttpResult>;

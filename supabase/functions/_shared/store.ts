@@ -2,6 +2,7 @@
 // store.supabase.ts (Deno only); tests use an in-memory one. Handlers never touch a database client directly.
 
 import type { AutoHideSettings, ReportForDecision, ReporterAbuseSettings, WaveSettings } from "./moderation.ts";
+import type { ChannelName, ChannelRow, NotificationKind, PrefsByKind, QueuedItem, UserSettings } from "./notify.ts";
 import type { ReportReason, ReviewAnswers } from "./validation.ts";
 
 export type ReviewStatus = "draft" | "visible" | "hidden" | "removed";
@@ -17,6 +18,7 @@ export interface Settings {
   /** Reports one user may file per day, so reporting cannot be used to harass. */
   reportsPerDay: number;
   updatesPerReview: number;
+  priceReports: { perInstallPerDay: number; outlierRatio: number; confirmations: number; windowHours: number; historyDays: number };
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -27,6 +29,7 @@ export const DEFAULT_SETTINGS: Settings = {
   notifications: { pendingAfterDeliveryDays: 14 },
   reportsPerDay: 20,
   updatesPerReview: 5,
+  priceReports: { perInstallPerDay: 200, outlierRatio: 0.6, confirmations: 2, windowHours: 24, historyDays: 90 },
 };
 
 export interface SiteRow {
@@ -134,6 +137,41 @@ export interface Notification {
   dedupeKey: string;
 }
 
+export interface PriceEventInput {
+  variantId: number;
+  price: number | null;
+  currency: string;
+  inStock: boolean | null;
+  installHash: string;
+  now: string;
+}
+
+export interface LastPrice {
+  price: number | null;
+  inStock: boolean | null;
+}
+
+export interface NotifyContextRow {
+  settings: UserSettings;
+  prefs: PrefsByKind;
+  channels: ChannelRow[];
+  messagesToday: number;
+}
+
+export interface ExtensionNotification {
+  id: number;
+  title: string;
+  text: string;
+  url: string | null;
+}
+
+export interface AdminStats {
+  perSite: { siteId: string; views: number; failed: number }[];
+  failedNotifications: number;
+  newReports: number;
+  newWaveFlags: number;
+}
+
 export interface Store {
   getSettings(): Promise<Settings>;
   getSite(id: string): Promise<SiteRow | null>;
@@ -189,4 +227,35 @@ export interface Store {
 
   exportUser(userId: string): Promise<Record<string, unknown>>;
   deleteUser(userId: string): Promise<void>;
+
+  // ---- phase 2: price reports
+  findVariant(productId: number, sku: string): Promise<number | null>;
+  countPriceEventsByInstallSince(installHash: string, sinceIso: string): Promise<number>;
+  lastPrice(variantId: number): Promise<LastPrice | null>;
+  recentPrices(variantId: number, limit: number): Promise<number[]>;
+  countOutlierConfirmations(variantId: number, price: number, sinceIso: string, excludeInstallHash: string): Promise<number>;
+  addOutlierCandidate(input: { variantId: number; price: number; inStock: boolean | null; installHash: string; now: string }): Promise<void>;
+  clearOutlierCandidates(variantId: number, price: number): Promise<void>;
+  insertPriceEvent(input: PriceEventInput): Promise<void>;
+
+  // ---- phase 2: notifications
+  enqueueReminders(now: string): Promise<void>;
+  listUsersWithQueued(limit: number): Promise<string[]>;
+  listQueuedForUser(userId: string): Promise<QueuedItem[]>;
+  getNotifyContext(userId: string, dayStartIso: string): Promise<NotifyContextRow>;
+  markQueue(ids: number[], status: "sent" | "skipped" | "failed"): Promise<void>;
+  logNotification(input: { userId: string; channel: ChannelName; kind: NotificationKind | "digest"; payload: Record<string, unknown>; status: "sent" | "failed"; error: string | null; now: string }): Promise<void>;
+  listExtensionPending(userId: string, limit: number): Promise<ExtensionNotification[]>;
+  ackExtension(userId: string, ids: number[], now: string): Promise<void>;
+
+  // ---- phase 2: channels
+  createTelegramToken(userId: string): Promise<string>;
+  consumeTelegramToken(token: string, now: string): Promise<string | null>;
+  upsertChannel(input: { userId: string; channel: ChannelName; address: string | null; verified: boolean; enabled: boolean }): Promise<void>;
+  disableChannelByAddress(channel: ChannelName, address: string): Promise<number>;
+
+  // ---- phase 2: admin alerts
+  getPrivateSetting(key: string): Promise<Record<string, unknown> | null>;
+  setPrivateSetting(key: string, value: Record<string, unknown>): Promise<void>;
+  adminStats(sinceIso: string): Promise<AdminStats>;
 }
