@@ -29,3 +29,9 @@ export function productPage({ sku, name = "מכנסי בדיקה", theme = "ligh
 export function plainPage(title = "נשים") {
   return `<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8"><title>${title}</title><link rel="canonical" href="https://www.terminalx.com/women"></head><body><h1>${title}</h1></body></html>`;
 }
+
+/** A category page. SYNTHETIC: three product cards, two of which have reviews in the mock backend. */
+export function listingPage() {
+  const card = (sku, name) => `<li class="product-card" style="border:1px solid #ccc;padding:8px;margin:8px;list-style:none;inline-size:180px"><a class="card-link" href="/${sku}">${name}</a><div>₪149.90</div></li>`;
+  return `<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8"><title>נשים (דף בדיקה)</title><link rel="canonical" href="https://www.terminalx.com/category/women"></head><body style="background:#fff;color:#222;font:16px Arial"><h1>נשים</h1><ul style="display:flex;flex-wrap:wrap;padding:0">${card("w817260002", "מכנסי בדיקה")}${card("w900030001", "חולצת בדיקה")}${card("w900010001", "מעיל בדיקה")}</ul></body></html>`;
+}

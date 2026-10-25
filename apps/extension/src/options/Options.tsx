@@ -1,6 +1,9 @@
-import { AccountPanel, DataControls, NotificationSettingsPanel, SizeProfilePanel, Root, SignInCard, Skel } from "@smartbuy/ui";
+import { useEffect, useState } from "preact/hooks";
+import { AccountPanel, DataControls, NotificationSettingsPanel, SizeProfilePanel, Root, SignInCard, Skel, Switch } from "@smartbuy/ui";
 import { useSession } from "../lib/auth.ts";
 import { BACKEND_CONFIGURED } from "../lib/env.ts";
+import { LISTING_SETTING } from "../lib/settings.ts";
+import { getLocal, setLocal } from "../lib/storage.ts";
 import { StoreList } from "./StoreList.tsx";
 
 function Section({ title, children }: { title: string; children: preact.ComponentChildren }) {
@@ -9,6 +12,30 @@ function Section({ title, children }: { title: string; children: preact.Componen
       <h2 class="sb-t-heading">{title}</h2>
       {children}
     </section>
+  );
+}
+
+/** Local to this browser, so it works without an account. Shown as changed only after the browser stored it. */
+function ListingStarsSwitch() {
+  const [value, setValue] = useState<boolean | null>(null);
+  const [failed, setFailed] = useState(false);
+  useEffect(() => {
+    void getLocal<boolean>(LISTING_SETTING).then((v) => setValue(v ?? true), () => setValue(true));
+  }, []);
+  const change = async (next: boolean) => {
+    setFailed(false);
+    try {
+      await setLocal(LISTING_SETTING, next);
+      setValue(next);
+    } catch {
+      setFailed(true);
+    }
+  };
+  return (
+    <div class="sb-stack sb-gap-2">
+      <Switch checked={value ?? true} disabled={value === null} onChange={change} label="כוכבים ברשימות מוצרים" description="בעמודי קטגוריה וחיפוש מוצג דירוג קטן על מוצרים שיש להם ביקורות. מוצר בלי ביקורות לא מקבל כלום." />
+      {failed && <p class="sb-t-support" role="alert">ההגדרה לא נשמרה. נסו שוב.</p>}
+    </div>
   );
 }
 
@@ -23,6 +50,8 @@ export function Options() {
           <p class="sb-t-support sb-secondary">התוסף פועל רק בחנויות שהפעלתם, ורק בעמודי מוצר. הוא לא שומר היסטוריית גלישה.</p>
           <StoreList />
         </Section>
+
+        <Section title="תצוגה בחנות"><ListingStarsSwitch /></Section>
 
         {BACKEND_CONFIGURED && (
           <Section title="חשבון">

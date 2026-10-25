@@ -4,6 +4,7 @@ import { SIZE_ADVICE_MIN_REVIEWS, isDetected, validateConfig, type ProductSummar
 import { send, type PanelMode, type ProductSnapshot, type SiteConfigResult } from "../lib/messages.ts";
 import type { RegisteredSite } from "../lib/sites.ts";
 import { isReportableFailure, readPage } from "./detect.ts";
+import { ListingStars } from "./listing.tsx";
 import { mountStrip, type MountedStrip } from "./mount.ts";
 import type { StripPrice, StripProps, StripState } from "./Strip.tsx";
 
@@ -12,6 +13,7 @@ const RETRY_DELAYS_MS = [0, 1_000, 3_000];
 
 export class PageController {
   private strip: MountedStrip | null = null;
+  private readonly listing: ListingStars;
   private shown: string | null = null;
   private dismissed = new Set<string>();
   private reported = new Set<string>();
@@ -21,14 +23,19 @@ export class PageController {
   private advice: StripProps["advice"] = null;
   private handlers: Pick<StripProps, "onOpen" | "onClose" | "onRetry"> = { onOpen: () => undefined, onClose: () => undefined, onRetry: () => undefined };
 
-  constructor(private readonly site: RegisteredSite, private readonly doc: Document, private readonly win: Window) {}
+  constructor(private readonly site: RegisteredSite, private readonly doc: Document, private readonly win: Window) {
+    this.listing = new ListingStars(site, doc);
+  }
 
   /** Call on first load and whenever the address changes without a page load. */
   async refresh(): Promise<void> {
     const run = ++this.runId;
     const config = await this.loadConfig();
     if (run !== this.runId) return;
-    if (config.status === "paused") return this.clear();
+    if (config.status === "paused") {
+      this.listing.stop();
+      return this.clear();
+    }
 
     // After a single-page navigation the address changes first and the page's own tags (canonical, structured data) follow,
     // so a contradiction is not trusted until the signals have had time to settle.
@@ -45,10 +52,13 @@ export class PageController {
     // Still contradictory after the last try: the majority rule of the spec decides (and the conflict was reported).
     if (settled?.product && isDetected(settled.detection)) return this.show(settled.product, run);
     this.clear();
+    // Not a product page: a category or search page may list products that have reviews.
+    void this.listing.start(config.config);
   }
 
   destroy(): void {
     this.runId++;
+    this.listing.stop();
     this.strip?.unmount();
     this.strip = null;
   }
@@ -68,6 +78,7 @@ export class PageController {
   }
 
   private async show(product: ProductSnapshot, run: number): Promise<void> {
+    this.listing.stop();
     if (this.shown === product.sku && this.strip) return;
     this.clearStripOnly();
     this.shown = product.sku;

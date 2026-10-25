@@ -151,10 +151,14 @@ export function startMock(port) {
     }
     if (p === "/functions/v1/takedown-request") return send(200, { ok: true });
     if (p === "/rest/v1/sites") {
-      return send(200, [{ id: "terminalx", name: "Terminal X", status: "beta", domains: ["terminalx.com", "www.terminalx.com"], adapter_config: bundled, adapter_version: 1 }].map((x) => ({ ...x, status: state.siteStatus })));
+      return send(200, [{ id: "terminalx", name: "Terminal X", status: "beta", domains: ["terminalx.com", "www.terminalx.com"], adapter_config: { ...bundled, listing: { card: "li.product-card", link: "a.card-link" } }, adapter_version: 2 }].map((x) => ({ ...x, status: state.siteStatus })));
     }
     if (p === "/rest/v1/product_summary") {
       const sku = q("parent_sku");
+      if (sku.startsWith("in.(")) {
+        const wanted = sku.slice(4, -1).split(",");
+        return send(200, wanted.map((w) => data.products[w]?.summary).filter(Boolean));
+      }
       if (sku === "w90002") return send(500, { message: "boom" });
       const product = data.products[sku];
       return send(200, product ? [product.summary] : []);

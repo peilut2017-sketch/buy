@@ -8,7 +8,7 @@ import { POLL_ALARM, pollAndShow, registerNotificationClicks } from "../src/back
 import { syncContentScripts } from "../src/background/register.ts";
 import { WEBSITE_URL } from "../src/lib/env.ts";
 import type { Message, PanelMode, ProductSnapshot } from "../src/lib/messages.ts";
-import { getReviews, getSizeProfile, getSummary, getTracking, pickUsualSize } from "@smartbuy/data";
+import { getListingSummaries, getReviews, getSizeProfile, getSummary, getTracking, pickUsualSize } from "@smartbuy/data";
 import { historyState, lowestInWindow, sizeAdvice } from "@smartbuy/core";
 import { currentIdentity } from "../src/lib/auth.ts";
 import { getSession, removeSession, setSession } from "../src/lib/storage.ts";
@@ -116,6 +116,14 @@ export default defineBackground(() => {
             sendResponse({ lowest: null });
           }
         })();
+        return true;
+      }
+
+      case "listing-summaries": {
+        void getListingSummaries(message.siteId, message.parentSkus).then(
+          (summaries) => sendResponse({ summaries }),
+          () => sendResponse({ summaries: [] }),
+        );
         return true;
       }
 

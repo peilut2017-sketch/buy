@@ -4,7 +4,7 @@ import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 import { ANON_KEY, ME, startMock } from "./mock-supabase.mjs";
-import { plainPage, productPage } from "./pages/product.mjs";
+import { listingPage, plainPage, productPage } from "./pages/product.mjs";
 
 const require = createRequire(import.meta.url);
 const { chromium } = require("playwright");
@@ -19,6 +19,7 @@ const PICTURE = `<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200
 /** Which synthetic page each address returns. Query options: theme, name, noimage, hostile. */
 function pageFor(url) {
   const sku = url.pathname.slice(1);
+  if (url.pathname === "/category/women") return listingPage();
   if (!/^[a-z]\d{9}$/.test(sku)) return plainPage();
   const q = url.searchParams;
   return productPage({

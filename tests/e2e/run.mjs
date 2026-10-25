@@ -600,6 +600,44 @@ await check("a size profile is saved on the server, and then the panel and the s
   mock.state.sizeReviews = false;
 });
 
+console.log("\nListing stars");
+
+await check("a category page gets a small rating on products with reviews only, and the setting turns it off", async () => {
+  const page = await context.newPage();
+  await page.goto("https://www.terminalx.com/category/women");
+  await page.waitForFunction(() => document.querySelectorAll("smartbuy-stars").length === 2, null, { timeout: 8000 });
+  const texts = await page.evaluate(() => [...document.querySelectorAll("li.product-card")].map((li) => li.querySelector("smartbuy-stars")?.shadowRoot?.textContent ?? ""));
+  assert.ok(texts[0].includes("4.3") && texts[0].includes("12 ביקורות"), `first card: ${texts[0]}`);
+  assert.ok(texts[1].includes("3.5") && texts[1].includes("2 ביקורות"), `second card: ${texts[1]}`);
+  assert.equal(texts[2], "", "a product without reviews must get nothing");
+  assert.equal(await page.locator("smartbuy-strip").count(), 0, "no strip on a category page");
+  await shot(page, "listing-stars");
+  const violations = await runAxe(page, "listing-stars", "li.product-card");
+  assert.deepEqual(violations, [], JSON.stringify(violations));
+  // The request carries product numbers but no account.
+  const calls = mock.state.requests.filter((r) => r.path.endsWith("product_summary") && decodeURIComponent(r.query).includes("in.("));
+  assert.ok(calls.length > 0);
+  assert.ok(calls.every((r) => !r.signedIn), "listing requests must be anonymous");
+  await page.close();
+
+  const options = await context.newPage();
+  await options.goto(env.extUrl("options.html"));
+  await options.getByRole("switch", { name: "כוכבים ברשימות מוצרים" }).click({ force: true });
+  await options.waitForFunction(() => document.querySelector('[role=switch]')?.checked === false);
+  await options.close();
+  const off = await context.newPage();
+  await off.goto("https://www.terminalx.com/category/women");
+  await off.waitForTimeout(1500);
+  assert.equal(await off.locator("smartbuy-stars").count(), 0);
+  await off.close();
+
+  const back = await context.newPage();
+  await back.goto(env.extUrl("options.html"));
+  await back.getByRole("switch", { name: "כוכבים ברשימות מוצרים" }).click({ force: true });
+  await back.waitForFunction(() => document.querySelector('[role=switch]')?.checked === true);
+  await back.close();
+});
+
 console.log("\nPopup, settings and welcome");
 
 await check("popup (signed in) shows the empty waiting list and the quiet-mode switch", async () => {

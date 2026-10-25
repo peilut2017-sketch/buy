@@ -376,3 +376,28 @@ export async function hasDeliveredOrder(token: string, productId: number, today 
 export function appealReview(token: string, reviewId: number, body: string): Promise<{ ok: true }> {
   return callFunction<{ ok: true }>("appeal-review", { reviewId, body }, token);
 }
+
+
+/* ---------------------------------------------------------------- listing stars */
+
+export interface ListingSummary {
+  parentSku: string;
+  reviewsCount: number;
+  ratingAvg: number;
+}
+
+const LISTING_MAX = 60;
+
+/**
+ * Rating and review count for many products at once, for the stars on category pages.
+ * Anonymous on purpose: no token, so the request says which products were on screen but not who looked.
+ * Products without public reviews are simply absent from the answer.
+ */
+export async function getListingSummaries(siteId: string, parentSkus: readonly string[]): Promise<ListingSummary[]> {
+  const skus = [...new Set(parentSkus.filter((s) => /^[a-z0-9_-]{1,40}$/i.test(s)))].slice(0, LISTING_MAX);
+  if (skus.length === 0) return [];
+  const rows = await rest<{ parent_sku: string; reviews_count: number; rating_avg: number | string | null }[]>("product_summary", {
+    params: { site_id: `eq.${siteId}`, parent_sku: `in.(${skus.join(",")})`, reviews_count: "gt.0", select: "parent_sku,reviews_count,rating_avg", limit: LISTING_MAX },
+  });
+  return rows.filter((r) => r.rating_avg !== null).map((r) => ({ parentSku: r.parent_sku, reviewsCount: Number(r.reviews_count), ratingAvg: Number(r.rating_avg) }));
+}
