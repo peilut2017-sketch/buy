@@ -39,7 +39,7 @@ export function App() {
   const fromTab: ProductRef | null =
     tab.product && site ? { siteId: tab.product.siteId, siteName: site.name, sku: tab.product.sku, parentSku: tab.product.parentSku, snapshot: tab.product } : null;
   const product = manual ?? fromTab;
-  const target = product ? toTarget(product) : null;
+  const target = product ? toTarget(product, site?.bundled.config.sizeGroup ?? null) : null;
   const productKey = product ? `${product.siteId}:${product.parentSku}` : "";
 
   // A different product, or a different tab, starts again at the list.

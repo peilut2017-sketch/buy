@@ -27,6 +27,8 @@ export interface ReviewTarget {
   price: PriceSnapshot | null;
   variantValues: Record<string, string>;
   variantOptions: VariantOption[];
+  /** The variant group that holds the size on this store (adapter config). Without it there is no personal size advice. */
+  sizeGroup?: string | null;
   /** Where a review is written: the extension can later verify it from orders, the website marks it as pending. */
   source: "extension" | "web";
 }

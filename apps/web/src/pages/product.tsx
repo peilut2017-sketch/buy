@@ -62,6 +62,7 @@ async function loadTarget(): Promise<{ target: ReviewTarget | null; sites: Publi
       price: null,
       variantValues: {},
       variantOptions: [],
+      sizeGroup: found.site.adapterConfig.sizeGroup ?? null,
       source: "web",
     },
   };

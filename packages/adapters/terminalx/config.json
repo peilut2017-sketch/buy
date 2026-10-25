@@ -8,5 +8,6 @@
   },
   "parentSku": { "fromSku": "^(.{6})" },
   "emailDomains": [],
-  "productType": "apparel"
+  "productType": "apparel",
+  "sizeGroup": "מידה"
 }

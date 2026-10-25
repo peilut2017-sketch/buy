@@ -13,6 +13,8 @@ export interface StripPrice {
 export interface StripProps {
   state: StripState;
   price: StripPrice | null;
+  /** "בשבילך: קח L", only for a signed-in person with a size profile and enough comparable reviews. */
+  advice: { headline: string; support: string } | null;
   /** The glass frame is made opaque over a dark or busy page. */
   opaque: boolean;
   onOpen: (mode: PanelMode) => void;
@@ -44,7 +46,7 @@ function PriceLine({ price, onOpen }: { price: StripPrice | null; onOpen: StripP
   );
 }
 
-function Body({ state, price, onOpen, onRetry }: Pick<StripProps, "state" | "price" | "onOpen" | "onRetry">) {
+function Body({ state, price, advice, onOpen, onRetry }: Pick<StripProps, "state" | "price" | "advice" | "onOpen" | "onRetry">) {
   if (state.kind === "loading") {
     return (
       <div class="sb-stack sb-gap-2" role="status" aria-label="טוענים ביקורות">
@@ -92,6 +94,12 @@ function Body({ state, price, onOpen, onRetry }: Pick<StripProps, "state" | "pri
         </span>
       </div>
       {meter.enough && <FitMeter meter={meter} compact />}
+      {advice && (
+        <p class="strip__advice">
+          <span class="sb-t-heading">{advice.headline}</span>
+          <span class="sb-t-support sb-secondary">{advice.support}</span>
+        </p>
+      )}
       <div>
         <Button variant="primary" small onClick={() => onOpen("reviews")}>ביקורות</Button>
       </div>
@@ -100,7 +108,7 @@ function Body({ state, price, onOpen, onRetry }: Pick<StripProps, "state" | "pri
   );
 }
 
-export function Strip({ state, price, opaque, onOpen, onClose, onRetry }: StripProps) {
+export function Strip({ state, price, advice, opaque, onOpen, onClose, onRetry }: StripProps) {
   return (
     <Root class="strip">
       <section class={opaque ? "sb-shell sb-shell--opaque" : "sb-shell"} aria-label="SmartBuy: ביקורות על המוצר">
@@ -110,7 +118,7 @@ export function Strip({ state, price, opaque, onOpen, onClose, onRetry }: StripP
             <span class="sb-grow" />
             <IconButton icon="close" label="סגירת הפס" onClick={onClose} />
           </div>
-          <Body state={state} price={price} onOpen={onOpen} onRetry={onRetry} />
+          <Body state={state} price={price} advice={advice} onOpen={onOpen} onRetry={onRetry} />
         </div>
       </section>
     </Root>

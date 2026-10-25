@@ -558,6 +558,48 @@ await check("settings: notification preferences are saved on the server and conf
   await page.close();
 });
 
+await check("a size profile is saved on the server, and then the panel and the strip say which size to take", async () => {
+  mock.state.sizeProfile = [];
+  mock.state.sizeReviews = true;
+  const options = await context.newPage();
+  await options.setViewportSize({ width: 800, height: 1000 });
+  await options.goto(env.extUrl("options.html"));
+  await options.getByRole("heading", { name: "המידות שלי" }).waitFor();
+  await options.getByRole("button", { name: "שמירת מידה" }).click();
+  await options.getByText("הזינו מידה").waitFor();
+  assert.equal(mock.state.sizeProfile.length, 0);
+  await options.getByLabel("המידה הרגילה").fill("m");
+  await options.getByRole("button", { name: "שמירת מידה" }).click();
+  await options.getByText("המידה נשמרה.").waitFor();
+  assert.deepEqual(mock.state.sizeProfile, [{ garment_type: "apparel", brand: "", size: "m" }]);
+  await options.getByRole("list", { name: "המידות שלי" }).waitFor();
+  const violations = await runAxe(options, "options-sizes");
+  assert.deepEqual(violations, [], JSON.stringify(violations));
+  await options.close();
+
+  const { product, panel } = await openPanel("w817260002");
+  await panel.getByText("בשבילך: קח L").waitFor();
+  assert.ok((await panel.locator("body").innerText()).includes("לפי 7 קונים שהמידה הרגילה שלהם כמו שלך"));
+  await shot(panel, "panel-size-advice", { fullPage: true });
+  await product.close();
+  await panel.close();
+
+  const page = await productPage("w817260002");
+  await stripOf(page);
+  await page.waitForFunction(() => document.querySelector("smartbuy-strip")?.shadowRoot?.textContent?.includes("בשבילך: קח L"), null, { timeout: 8000 });
+  await shot(page, "strip-size-advice");
+  await page.close();
+
+  // Without a profile nothing is said.
+  mock.state.sizeProfile = [];
+  const quiet = await productPage("w817260002");
+  await stripOf(quiet);
+  await quiet.waitForTimeout(800);
+  assert.ok(!(await stripText(quiet)).includes("בשבילך"));
+  await quiet.close();
+  mock.state.sizeReviews = false;
+});
+
 console.log("\nPopup, settings and welcome");
 
 await check("popup (signed in) shows the empty waiting list and the quiet-mode switch", async () => {

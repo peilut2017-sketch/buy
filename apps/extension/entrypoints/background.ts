@@ -8,8 +8,9 @@ import { POLL_ALARM, pollAndShow, registerNotificationClicks } from "../src/back
 import { syncContentScripts } from "../src/background/register.ts";
 import { WEBSITE_URL } from "../src/lib/env.ts";
 import type { Message, PanelMode, ProductSnapshot } from "../src/lib/messages.ts";
-import { getSummary, getTracking } from "@smartbuy/data";
-import { historyState, lowestInWindow } from "@smartbuy/core";
+import { getReviews, getSizeProfile, getSummary, getTracking, pickUsualSize } from "@smartbuy/data";
+import { historyState, lowestInWindow, sizeAdvice } from "@smartbuy/core";
+import { currentIdentity } from "../src/lib/auth.ts";
 import { getSession, removeSession, setSession } from "../src/lib/storage.ts";
 import { siteById } from "../src/lib/sites.ts";
 import type { ProductSummary } from "@smartbuy/core";
@@ -113,6 +114,28 @@ export default defineBackground(() => {
             sendResponse({ lowest: low ? { price: low.price, since: low.since.toISOString() } : null });
           } catch {
             sendResponse({ lowest: null });
+          }
+        })();
+        return true;
+      }
+
+      case "size-advice": {
+        void (async () => {
+          try {
+            const identity = await currentIdentity();
+            const site = siteById(message.siteId);
+            if (!identity || !site) return sendResponse({ advice: null });
+            const sizeGroup = (await loadSiteConfig(site)).config.sizeGroup;
+            if (!sizeGroup) return sendResponse({ advice: null });
+            const usual = pickUsualSize(await getSizeProfile(identity.token, identity.userId), message.productType, message.brand);
+            if (!usual) return sendResponse({ advice: null });
+            const summary = await getSummary(message.siteId, message.parentSku, identity.token);
+            if (!summary) return sendResponse({ advice: null });
+            const { reviews } = await getReviews(summary.productId, identity.token, identity.userId);
+            const advice = sizeAdvice(reviews, usual, sizeGroup);
+            sendResponse({ advice: advice.kind === "advice" ? { headline: advice.headline, support: advice.support } : null });
+          } catch {
+            sendResponse({ advice: null });
           }
         })();
         return true;

@@ -44,6 +44,7 @@ export function validateConfig(raw: unknown, doc: Document | null = typeof docum
     return { ok: false, reason: "parentSku.fromSku is not a valid pattern" };
   }
   if (typeof raw.productType !== "string" || raw.productType === "") return { ok: false, reason: "productType is missing" };
+  if (raw.sizeGroup !== undefined && (typeof raw.sizeGroup !== "string" || raw.sizeGroup === "")) return { ok: false, reason: "sizeGroup must be a non-empty string" };
   if (!Array.isArray(raw.emailDomains) || !raw.emailDomains.every((d) => typeof d === "string")) {
     return { ok: false, reason: "emailDomains must be a list of strings" };
   }

@@ -1,6 +1,6 @@
 // Keeps the strip in step with the page: finds the product, shows the strip, and follows single-page navigation.
 
-import { isDetected, validateConfig, type ProductSummary } from "@smartbuy/core";
+import { SIZE_ADVICE_MIN_REVIEWS, isDetected, validateConfig, type ProductSummary } from "@smartbuy/core";
 import { send, type PanelMode, type ProductSnapshot, type SiteConfigResult } from "../lib/messages.ts";
 import type { RegisteredSite } from "../lib/sites.ts";
 import { isReportableFailure, readPage } from "./detect.ts";
@@ -18,6 +18,7 @@ export class PageController {
   private runId = 0;
   private config: SiteConfigResult | null = null;
   private price: StripPrice | null = null;
+  private advice: StripProps["advice"] = null;
   private handlers: Pick<StripProps, "onOpen" | "onClose" | "onRetry"> = { onOpen: () => undefined, onClose: () => undefined, onRetry: () => undefined };
 
   constructor(private readonly site: RegisteredSite, private readonly doc: Document, private readonly win: Window) {}
@@ -71,6 +72,7 @@ export class PageController {
     this.clearStripOnly();
     this.shown = product.sku;
     this.price = null;
+    this.advice = null;
     void send("product-detected", { product }).catch(() => undefined);
     if (this.dismissed.has(product.sku)) return;
 
@@ -82,7 +84,7 @@ export class PageController {
       },
       onRetry: () => void this.loadSummary(product, this.runId),
     };
-    this.strip = mountStrip(this.doc, { state: { kind: "loading" }, price: null, ...this.handlers });
+    this.strip = mountStrip(this.doc, { state: { kind: "loading" }, price: null, advice: null, ...this.handlers });
     void this.loadPrice(product, run);
     await this.loadSummary(product, run);
   }
@@ -112,6 +114,19 @@ export class PageController {
       state = { kind: "error" };
     }
     if (run === this.runId && this.shown === product.sku) this.setState(state);
+    if (state.kind === "ready" && state.summary && state.summary.reviewsCount >= SIZE_ADVICE_MIN_REVIEWS) void this.loadAdvice(product, run);
+  }
+
+  /** Personal size advice needs the account and enough comparable reviews; without either the strip says nothing about it. */
+  private async loadAdvice(product: ProductSnapshot, run: number): Promise<void> {
+    try {
+      const { advice } = await send("size-advice", { siteId: product.siteId, parentSku: product.parentSku, productType: product.productType, brand: product.brand });
+      if (run !== this.runId || this.shown !== product.sku) return;
+      this.advice = advice;
+      this.redraw();
+    } catch {
+      /* no advice */
+    }
   }
 
   private state: StripState = { kind: "loading" };
@@ -122,7 +137,7 @@ export class PageController {
   }
 
   private redraw(): void {
-    this.strip?.update({ state: this.state, price: this.price, ...this.handlers });
+    this.strip?.update({ state: this.state, price: this.price, advice: this.advice, ...this.handlers });
   }
 
   private clearStripOnly(): void {

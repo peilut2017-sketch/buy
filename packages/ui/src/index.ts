@@ -17,3 +17,4 @@ export * from "./tracking/TrackingView.tsx";
 export * from "./settings/NotificationSettings.tsx";
 export * from "./tracking/WatchList.tsx";
 export * from "./reviews/UpdateForm.tsx";
+export * from "./settings/SizeProfile.tsx";

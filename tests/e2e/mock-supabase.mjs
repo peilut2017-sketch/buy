@@ -27,6 +27,8 @@ export function startMock(port) {
     siteStatus: "beta",
     watches: [],
     updates: [],
+    sizeProfile: [],
+    sizeReviews: false,
     updateFails: false,
     nextWatchId: 1,
     prefs: ["price_target", "price_drop", "restock", "new_review_on_watch", "my_review_activity", "moderation_decision", "pending_review_reminder", "durability_reminder"].map((kind) => ({ kind, enabled: true, channels: ["extension"] })),
@@ -107,6 +109,18 @@ export function startMock(port) {
       state.watches = state.watches.map((w) => (w.id === id ? { ...w, ...input } : w));
       return send(200, state.watches.filter((w) => w.id === id));
     }
+    if (p === "/rest/v1/size_profiles") {
+      if (req.method === "GET") return send(200, state.sizeProfile);
+      if (req.method === "DELETE") {
+        const before = state.sizeProfile.length;
+        state.sizeProfile = state.sizeProfile.filter((e) => !(e.garment_type === q("garment_type") && e.brand === q("brand")));
+        return send(200, before === state.sizeProfile.length ? [] : [{ size: "x" }]);
+      }
+      const input = JSON.parse(body || "{}");
+      state.sizeProfile = state.sizeProfile.filter((e) => !(e.garment_type === input.garment_type && e.brand === input.brand));
+      state.sizeProfile.push({ garment_type: input.garment_type, brand: input.brand, size: input.size });
+      return send(201, [{ size: input.size }]);
+    }
     if (p === "/rest/v1/notification_prefs") {
       if (req.method === "PATCH") {
         const kind = q("kind");
@@ -150,6 +164,12 @@ export function startMock(port) {
       }
       if (q("product_id") === "3") return send(200, data.reviews.slice(0, 2).map((r, i) => ({ ...r, id: 300 + i })));
       const rows = [...data.reviews];
+      if (state.sizeReviews) {
+        // SYNTHETIC: six buyers who usually wear M, bought L, and called it exact.
+        for (let i = 0; i < 6; i++) {
+          rows.push({ id: 700 + i, user_id: "00000000-0000-4000-8000-000000000003", rating: 4, title: null, body: `ביקורת בדיקה סינתטית מספר ${i} על מידה ועל התאמה.`, answers: { fit: "exact", usual_size: "M" }, variant_values: { "מידה": "L" }, verification: "unverified", purchase_month: "2026-08-01", purchased_at: null, delivered_at: null, written_at: "2026-10-01T09:00:00Z", edited_at: null, helpful_count: 0, status: "visible" });
+        }
+      }
       if (signedIn && state.myReview) rows.push(state.myReview);
       return send(200, rows);
     }

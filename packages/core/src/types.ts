@@ -129,6 +129,8 @@ export interface AdapterConfig {
   emailDomains: string[];
   /** Selects which category_questions apply: "apparel", "footwear", "general". */
   productType: string;
+  /** Name of the variant group that holds the size on this store, as the page shows it. Enables personal size advice. */
+  sizeGroup?: string;
 }
 
 /** A config together with its version (the `sites.adapter_version` column). */

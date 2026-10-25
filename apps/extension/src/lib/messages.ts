@@ -45,6 +45,7 @@ interface Requests {
   summary: { req: { siteId: string; parentSku: string }; res: { summary: ProductSummary | null } };
   "open-panel": { req: { mode: PanelMode }; res: { ok: boolean } };
   "price-info": { req: { siteId: string; parentSku: string; sku: string }; res: { lowest: { price: number; since: string } | null } };
+  "size-advice": { req: { siteId: string; parentSku: string; productType: string; brand: string | null }; res: { advice: { headline: string; support: string } | null } };
   "tab-product": { req: { tabId: number }; res: { product: ProductSnapshot | null; mode: PanelMode | null } };
   "detect-failed": { req: { failure: DetectFailure }; res: { ok: true } };
   "sync-content-scripts": { req: Record<string, never>; res: { registered: string[] } };

@@ -8,12 +8,13 @@ import {
   filterReviews,
   fitMeter,
   formatRating,
+  sizeAdvice,
   sortReviews,
   type ReviewFilters,
   type ReviewView,
   type SortMode,
 } from "@smartbuy/core";
-import { NetworkError, deleteReview, getReviews, getSummary, setHelpful, type Identity, type ReviewTarget, type ReviewsResult } from "@smartbuy/data";
+import { NetworkError, deleteReview, getReviews, getSizeProfile, getSummary, pickUsualSize, setHelpful, type Identity, type ReviewTarget, type ReviewsResult } from "@smartbuy/data";
 import { useMemo, useState } from "preact/hooks";
 import { Button, CompactSelect, FitMeter, Notice, Skel, Stars } from "../components.tsx";
 import { useResource } from "../hooks.ts";
@@ -37,14 +38,20 @@ interface Loaded {
   productId: number | null;
   summary: Awaited<ReturnType<typeof getSummary>>;
   result: ReviewsResult;
+  /** The signed-in person's usual size for this kind of product, when they set one and the store has a size group. */
+  usualSize: string | null;
 }
 
 async function load(target: ReviewTarget, identity: Identity | null): Promise<Loaded> {
   const token = identity?.token ?? null;
   const summary = await getSummary(target.siteId, target.parentSku, token);
-  if (!summary) return { productId: null, summary: null, result: { reviews: [], mine: null } };
-  const result = await getReviews(summary.productId, token, identity?.userId ?? null);
-  return { productId: summary.productId, summary, result };
+  if (!summary) return { productId: null, summary: null, result: { reviews: [], mine: null }, usualSize: null };
+  const [result, usualSize] = await Promise.all([
+    getReviews(summary.productId, token, identity?.userId ?? null),
+    // Advice is a bonus: if the profile cannot be read the reviews still load.
+    identity && target.sizeGroup ? getSizeProfile(identity.token, identity.userId).then((p) => pickUsualSize(p, target.productType, target.brand), () => null) : Promise.resolve(null),
+  ]);
+  return { productId: summary.productId, summary, result, usualSize };
 }
 
 function ListSkeleton() {
@@ -93,7 +100,8 @@ export function ReviewsView({ target, identity, getIdentity, version, onWrite, o
     );
   }
 
-  const { summary, result } = data.data;
+  const { summary, result, usualSize } = data.data;
+  const advice = usualSize ? sizeAdvice(result.reviews, usualSize, target.sizeGroup) : null;
   const all = result.reviews.filter((r) => !layer.removed.has(r.id)).map((r) => ({ ...r, ...layer.patches.get(r.id) }));
   const shown = sortReviews(filterReviews(all, filters), sort);
   const filterCount = activeFilterCount(filters);
@@ -155,6 +163,7 @@ export function ReviewsView({ target, identity, getIdentity, version, onWrite, o
             </div>
           </div>
           {meter && <FitMeter meter={meter} />}
+          {advice?.kind === "advice" && <Notice kind="info" title={advice.headline}>{advice.support}</Notice>}
         </section>
       ) : null}
 

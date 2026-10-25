@@ -10,7 +10,7 @@ export interface ProductRef {
   snapshot: ProductSnapshot | null;
 }
 
-export function toTarget(ref: ProductRef): ReviewTarget {
+export function toTarget(ref: ProductRef, sizeGroup: string | null = null): ReviewTarget {
   const snap = ref.snapshot;
   return {
     siteId: ref.siteId,
@@ -26,6 +26,7 @@ export function toTarget(ref: ProductRef): ReviewTarget {
     price: snap?.price ?? null,
     variantValues: snap?.variantValues ?? {},
     variantOptions: snap?.variantOptions ?? [],
+    sizeGroup,
     source: "extension",
   };
 }
