@@ -1,5 +1,5 @@
 import type { ReviewView } from "@smartbuy/core";
-import { AppealForm, Button, IconButton, Notice, ProductHeader, ReportForm, RequireAccount, ReviewsView, Root, Segmented, SignInCard, Skel, TrackingView, WriteFlow } from "@smartbuy/ui";
+import { AppealForm, Button, IconButton, Notice, ProductHeader, ReportForm, RequireAccount, ReviewsView, Root, Segmented, SignInCard, Skel, UpdateForm, TrackingView, WriteFlow } from "@smartbuy/ui";
 import { useEffect, useState } from "preact/hooks";
 import { currentIdentity, useSession } from "../lib/auth.ts";
 import { BACKEND_CONFIGURED } from "../lib/env.ts";
@@ -15,6 +15,7 @@ type View =
   | { name: "write" }
   | { name: "report"; review: ReviewView }
   | { name: "appeal"; review: ReviewView }
+  | { name: "update"; review: ReviewView }
   | { name: "signin"; reason: string };
 
 function SignInView({ reason, onDone }: { reason: string; onDone: () => void }) {
@@ -87,6 +88,12 @@ export function App() {
         {({ identity: id }) => <AppealForm review={view.review} identity={id} onClose={() => backToList(true)} />}
       </RequireAccount>
     );
+  } else if (view.name === "update") {
+    content = (
+      <RequireAccount reason="כדי להוסיף עדכון צריך להתחבר.">
+        {({ identity: id }) => <UpdateForm review={view.review} identity={id} onClose={(changed) => backToList(changed)} />}
+      </RequireAccount>
+    );
   } else if (view.name === "signin") {
     content = <SignInView reason={view.reason} onDone={() => backToList(true)} />;
   } else if (tabName === "tracking") {
@@ -110,6 +117,7 @@ export function App() {
         onNeedSignIn={(reason) => setView({ name: "signin", reason })}
         onReport={(review) => setView({ name: "report", review })}
         onAppeal={(review) => setView({ name: "appeal", review })}
+        onUpdate={(review) => setView({ name: "update", review })}
       />
     );
   }

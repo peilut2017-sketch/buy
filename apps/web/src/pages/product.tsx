@@ -1,5 +1,5 @@
 import { rest, type ReviewTarget } from "@smartbuy/data";
-import { AppealForm, Button, IconButton, Notice, ProductHeader, ReportForm, RequireAccount, ReviewsView, Segmented, SignInCard, Skel, TrackingView, WriteFlow, useAuth, useResource, type SessionState } from "@smartbuy/ui";
+import { AppealForm, Button, IconButton, Notice, ProductHeader, ReportForm, RequireAccount, ReviewsView, Segmented, SignInCard, Skel, UpdateForm, TrackingView, WriteFlow, useAuth, useResource, type SessionState } from "@smartbuy/ui";
 import type { ReviewView } from "@smartbuy/core";
 import { useEffect, useState } from "preact/hooks";
 import { boot, setTitle } from "../lib/boot.tsx";
@@ -13,6 +13,7 @@ type View =
   | { name: "write" }
   | { name: "report"; review: ReviewView }
   | { name: "appeal"; review: ReviewView }
+  | { name: "update"; review: ReviewView }
   | { name: "signin"; reason: string };
 
 interface ProductRow {
@@ -131,6 +132,8 @@ function ProductPage() {
     content = <RequireAccount reason="כדי לדווח על ביקורת צריך להתחבר.">{({ identity: id }) => <ReportForm review={view.review} identity={id} onClose={() => back()} />}</RequireAccount>;
   } else if (view.name === "appeal") {
     content = <RequireAccount reason="כדי לערער צריך להתחבר.">{({ identity: id }) => <AppealForm review={view.review} identity={id} onClose={() => back(true)} />}</RequireAccount>;
+  } else if (view.name === "update") {
+    content = <RequireAccount reason="כדי להוסיף עדכון צריך להתחבר.">{({ identity: id }) => <UpdateForm review={view.review} identity={id} onClose={(changed) => back(changed)} />}</RequireAccount>;
   } else if (view.name === "signin") {
     content = <SignInView reason={view.reason} onDone={() => back(true)} />;
   } else if (tabName === "tracking") {
@@ -146,6 +149,7 @@ function ProductPage() {
         onNeedSignIn={(reason) => setView({ name: "signin", reason })}
         onReport={(review) => setView({ name: "report", review })}
         onAppeal={(review) => setView({ name: "appeal", review })}
+        onUpdate={(review) => setView({ name: "update", review })}
       />
     );
   }

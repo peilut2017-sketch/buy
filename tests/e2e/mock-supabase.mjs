@@ -26,6 +26,8 @@ export function startMock(port) {
     audit: [{ id: 1, action: "decide_report", target_type: "report", target_id: "9", created_at: "2026-10-20T09:00:00Z", details: { reason: "ספאם ברור" } }],
     siteStatus: "beta",
     watches: [],
+    updates: [],
+    updateFails: false,
     nextWatchId: 1,
     prefs: ["price_target", "price_drop", "restock", "new_review_on_watch", "my_review_activity", "moderation_decision", "pending_review_reminder", "durability_reminder"].map((kind) => ({ kind, enabled: true, channels: ["extension"] })),
     profileExtra: { quiet_hours: null, shabbat_mode: false, shabbat_city: null, daily_notification_cap: 3 },
@@ -182,6 +184,11 @@ export function startMock(port) {
     if (p === "/functions/v1/events") return send(200, { ok: true });
     if (p === "/functions/v1/report-review") return send(200, { ok: true });
     if (p === "/functions/v1/appeal-review") return send(200, { ok: true });
+    if (p === "/functions/v1/review-update") {
+      if (state.updateFails) return send(500, { message: "boom" });
+      state.updates.push(JSON.parse(body || "{}"));
+      return send(200, { updateId: 900 + state.updates.length });
+    }
     if (p === "/functions/v1/submit-review") {
       if (state.submit === "fail") return send(500, { message: "boom" });
       if (state.submit === "fields") return send(422, { errors: { body: "הביקורת קצרה מדי. כתבו לפחות 30 תווים (כרגע 5)." } });

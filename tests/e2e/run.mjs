@@ -403,6 +403,34 @@ await check("a saved review shows as published only after the server answered, t
   await panel.close();
 });
 
+await check("adding an update to my review validates, reports a failed save, and confirms only after the server accepted", async () => {
+  mock.state.updates = [];
+  const { product, panel } = await openPanel("w817260002");
+  await panel.waitForSelector(".sb-review");
+  await panel.getByRole("button", { name: "הוספת עדכון" }).click();
+  await panel.getByRole("heading", { name: "עדכון לביקורת" }).waitFor();
+  await panel.getByRole("button", { name: "שמירת עדכון" }).click();
+  await panel.getByText(/העדכון קצר מדי/).waitFor();
+  assert.equal(mock.state.updates.length, 0);
+
+  await panel.getByLabel("מה השתנה?").fill("אחרי חודשיים הבד עדיין במצב טוב.");
+  mock.state.updateFails = true;
+  await panel.getByRole("button", { name: "שמירת עדכון" }).click();
+  await panel.getByText("העדכון לא נשמר. נסו שוב.").waitFor();
+  assert.equal(await panel.getByText("העדכון נשמר").count(), 0);
+
+  mock.state.updateFails = false;
+  await panel.getByRole("group", { name: /דירוג מעודכן/ }).getByLabel("4 כוכבים").check({ force: true });
+  await panel.getByRole("button", { name: "שמירת עדכון" }).click();
+  await panel.getByText("העדכון נשמר").waitFor();
+  assert.equal(mock.state.updates.length, 1);
+  assert.equal(mock.state.updates[0].rating, 4);
+  const violations = await runAxe(panel, "panel-update");
+  assert.deepEqual(violations, [], JSON.stringify(violations));
+  await product.close();
+  await panel.close();
+});
+
 await check("reporting needs a reason, confirms only after the server accepted, and handles the nickname step", async () => {
   mock.state.myReview = null;
   const { product, panel } = await openPanel("w817260002");

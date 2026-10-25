@@ -15,6 +15,7 @@ export interface ReviewItemProps {
   onEdit: (review: ReviewView) => void;
   onDelete: (review: ReviewView) => void;
   onAppeal: (review: ReviewView) => void;
+  onUpdate: (review: ReviewView) => void;
 }
 
 function VerificationChip({ review }: { review: ReviewView }) {
@@ -23,7 +24,7 @@ function VerificationChip({ review }: { review: ReviewView }) {
   return <Chip>{VERIFICATION_LABEL.unverified}</Chip>;
 }
 
-export function ReviewItem({ review, now, busy, onHelpful, onReport, onEdit, onDelete, onAppeal }: ReviewItemProps) {
+export function ReviewItem({ review, now, busy, onHelpful, onReport, onEdit, onDelete, onAppeal, onUpdate }: ReviewItemProps) {
   const [expanded, setExpanded] = useState(false);
   const timing = reviewTiming(review, now);
   const facts = answerFacts(review.answers);
@@ -101,6 +102,7 @@ export function ReviewItem({ review, now, busy, onHelpful, onReport, onEdit, onD
         {review.mine && (
           <>
             <Button variant="quiet" small icon="edit" disabled={busy} onClick={() => onEdit(review)}>עריכה</Button>
+            {!review.hidden && review.body !== null && <Button variant="quiet" small icon="plus" disabled={busy} onClick={() => onUpdate(review)}>הוספת עדכון</Button>}
             <Button variant="danger" small icon="trash" disabled={busy} onClick={() => onDelete(review)}>מחיקה</Button>
             {review.hidden && <Button variant="quiet" small disabled={busy} onClick={() => onAppeal(review)}>ערעור</Button>}
           </>

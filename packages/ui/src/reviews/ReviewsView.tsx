@@ -30,6 +30,7 @@ export interface ReviewsViewProps {
   onNeedSignIn: (reason: string) => void;
   onReport: (review: ReviewView) => void;
   onAppeal: (review: ReviewView) => void;
+  onUpdate: (review: ReviewView) => void;
 }
 
 interface Loaded {
@@ -67,7 +68,7 @@ const FIT_OPTIONS = [
   { value: "large", label: "גדול" },
 ];
 
-export function ReviewsView({ target, identity, getIdentity, version, onWrite, onNeedSignIn, onReport, onAppeal }: ReviewsViewProps) {
+export function ReviewsView({ target, identity, getIdentity, version, onWrite, onNeedSignIn, onReport, onAppeal, onUpdate }: ReviewsViewProps) {
   const data = useResource(() => load(target, identity), [target.siteId, target.parentSku, identity?.userId ?? "", version]);
   const [filters, setFilters] = useState<ReviewFilters>(NO_FILTERS);
   const [sort, setSort] = useState<SortMode>("relevance");
@@ -190,6 +191,7 @@ export function ReviewsView({ target, identity, getIdentity, version, onWrite, o
                 onEdit={() => onWrite()}
                 onDelete={onDelete}
                 onAppeal={onAppeal}
+                onUpdate={onUpdate}
               />
             </div>
           ))}
