@@ -48,19 +48,35 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - name: Check the secrets are set
+      - name: Write the extension settings
         env:
           URL: ${{ secrets.SUPABASE_URL }}
           KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          PASSWORD_LOGIN: ${{ inputs.password_login && '1' || '' }}
         run: |
+          # Whitespace or a stray newline pasted with a secret would silently break the build, so it is removed.
+          URL="$(printf '%s' "$URL" | tr -d '[:space:]')"
+          KEY="$(printf '%s' "$KEY" | tr -d '[:space:]')"
           test -n "$URL" || { echo "Missing secret SUPABASE_URL"; exit 1; }
           test -n "$KEY" || { echo "Missing secret SUPABASE_ANON_KEY"; exit 1; }
+          case "$URL" in https://*) ;; *) echo "SUPABASE_URL must start with https://"; exit 1;; esac
+          {
+            printf 'WXT_SUPABASE_URL=%s\n' "$URL"
+            printf 'WXT_SUPABASE_ANON_KEY=%s\n' "$KEY"
+            printf 'WXT_TRIAL_PASSWORD_LOGIN=%s\n' "$PASSWORD_LOGIN"
+          } > apps/extension/.env
+          echo "URL length: ${#URL}, key length: ${#KEY}, password login: ${PASSWORD_LOGIN:-off}"
       - name: Build
-        env:
-          WXT_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          WXT_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
-          WXT_TRIAL_PASSWORD_LOGIN: ${{ inputs.password_login && '1' || '' }}
         run: pnpm build:ext
+      - name: Verify the settings are inside the build
+        env:
+          URL: ${{ secrets.SUPABASE_URL }}
+        run: |
+          URL="$(printf '%s' "$URL" | tr -d '[:space:]')"
+          HOST="${URL#https://}"
+          N="$(grep -rl --fixed-strings "$HOST" apps/extension/.output/chrome-mv3 | wc -l)"
+          echo "Files containing the server address: $N"
+          test "$N" -gt 0 || { echo "The server address did not end up in the build"; exit 1; }
       - run: pnpm check:manifest
       - uses: actions/upload-artifact@v4
         with:
