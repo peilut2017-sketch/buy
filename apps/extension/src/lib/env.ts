@@ -7,3 +7,9 @@ export const SUPABASE_ANON_KEY: string = String(import.meta.env.WXT_SUPABASE_ANO
 export const WEBSITE_URL: string = String(import.meta.env.WXT_WEBSITE_URL ?? "").replace(/\/$/, "");
 
 export const BACKEND_CONFIGURED = SUPABASE_URL !== "" && SUPABASE_ANON_KEY !== "";
+
+/**
+ * Trial builds only: sign in with an email and password for an account created in the Supabase dashboard, for when no
+ * email provider is set up yet. Off in every normal build, so a published extension never shows it.
+ */
+export const PASSWORD_LOGIN_ENABLED = String(import.meta.env.WXT_TRIAL_PASSWORD_LOGIN ?? "") === "1";

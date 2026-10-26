@@ -14,10 +14,11 @@ function messageOf(e: unknown): string {
 
 /** Sign-in card: Google, or a one-time code by email. Viewing reviews never needs this; writing and voting do. */
 export function SignInCard({ reason }: { reason: string }) {
-  const { signInWithGoogle, requestEmailCode, verifyEmailCode } = useAuth();
-  const [step, setStep] = useState<"choose" | "email" | "code">("choose");
+  const { signInWithGoogle, requestEmailCode, verifyEmailCode, signInWithPassword } = useAuth();
+  const [step, setStep] = useState<"choose" | "email" | "code" | "password">("choose");
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
+  const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -45,6 +46,7 @@ export function SignInCard({ reason }: { reason: string }) {
         <div class="sb-stack sb-gap-2">
           <Button variant="primary" block disabled={busy} onClick={() => run(signInWithGoogle)}>המשך עם Google</Button>
           <Button block disabled={busy} onClick={() => setStep("email")}>המשך עם קוד במייל</Button>
+          {signInWithPassword && <Button block variant="quiet" disabled={busy} onClick={() => setStep("password")}>כניסה עם סיסמה (גרסת הרצה)</Button>}
         </div>
       )}
 
@@ -52,6 +54,15 @@ export function SignInCard({ reason }: { reason: string }) {
         <form class="sb-stack sb-gap-3" onSubmit={(e) => (e.preventDefault(), void run(() => requestEmailCode(email), "code"))}>
           <TextField label="כתובת מייל" type="email" value={email} onInput={(e) => setEmail((e.currentTarget as HTMLInputElement).value)} dir="ltr" class="ltr-input" autocomplete="email" required />
           <Button type="submit" variant="primary" block disabled={busy || email.trim() === ""}>שליחת קוד</Button>
+        </form>
+      )}
+
+      {step === "password" && signInWithPassword && (
+        <form class="sb-stack sb-gap-3" onSubmit={(e) => (e.preventDefault(), void run(() => signInWithPassword(email, password)))}>
+          <TextField label="כתובת מייל" type="email" value={email} onInput={(e) => setEmail((e.currentTarget as HTMLInputElement).value)} dir="ltr" class="ltr-input" autocomplete="email" required />
+          <TextField label="סיסמה" type="password" value={password} onInput={(e) => setPassword((e.currentTarget as HTMLInputElement).value)} dir="ltr" class="ltr-input" autocomplete="current-password" required />
+          <Button type="submit" variant="primary" block disabled={busy || email.trim() === "" || password === ""}>כניסה</Button>
+          <Button variant="quiet" onClick={() => setStep("choose")}>חזרה</Button>
         </form>
       )}
 

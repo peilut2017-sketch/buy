@@ -6,7 +6,7 @@ import { browser } from "wxt/browser";
 import { AuthError, type AuthApi, type SessionState } from "@smartbuy/ui";
 import type { Identity } from "@smartbuy/data";
 import { useEffect, useState } from "preact/hooks";
-import { BACKEND_CONFIGURED, SUPABASE_ANON_KEY, SUPABASE_URL, WEBSITE_URL } from "./env.ts";
+import { BACKEND_CONFIGURED, PASSWORD_LOGIN_ENABLED, SUPABASE_ANON_KEY, SUPABASE_URL, WEBSITE_URL } from "./env.ts";
 import { NotConfiguredError } from "@smartbuy/data";
 
 const extensionStorage = {
@@ -99,6 +99,11 @@ export async function verifyEmailCode(email: string, code: string): Promise<void
   if (error) throw new AuthError("הקוד שגוי או שפג תוקפו. בקשו קוד חדש.");
 }
 
+export async function signInWithPassword(email: string, password: string): Promise<void> {
+  const { error } = await authClient().auth.signInWithPassword({ email: email.trim(), password });
+  if (error) throw new AuthError("המייל או הסיסמה שגויים.");
+}
+
 export async function signOut(): Promise<void> {
   await authClient().auth.signOut();
 }
@@ -113,6 +118,7 @@ export const extensionAuth: AuthApi = {
   signInWithGoogle,
   requestEmailCode,
   verifyEmailCode,
+  ...(PASSWORD_LOGIN_ENABLED ? { signInWithPassword } : {}),
   getIdentity: currentIdentity,
   signOut,
 };

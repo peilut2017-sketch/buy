@@ -17,6 +17,8 @@ export interface AuthApi {
   signInWithGoogle(): Promise<void>;
   requestEmailCode(email: string): Promise<void>;
   verifyEmailCode(email: string, code: string): Promise<void>;
+  /** Trial builds only. When present, the sign-in card offers an email and password form. */
+  signInWithPassword?(email: string, password: string): Promise<void>;
   getIdentity(): Promise<Identity | null>;
   signOut(): Promise<void>;
 }

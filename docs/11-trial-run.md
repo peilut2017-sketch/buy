@@ -21,6 +21,7 @@
 בלוח הבקרה: Authentication, Providers, **Email** פעיל.
 - ב-Authentication, Email Templates, "Magic Link": להחליף את התוכן כך שיכלול את הקוד: `הקוד שלכם: {{ .Token }}`. התוסף מבקש קוד בן ספרות ולא קישור.
 - Authentication, URL Configuration: Site URL שווה לכתובת האתר (אם אין עדיין, כתובת ה-Pages שתקבלו בשלב 5).
+- **בלי ספק מייל (SMTP):** Supabase נועל את תבניות המייל עד שמגדירים SMTP מותאם (למשל Resend: Host `smtp.resend.com`, Port 465, Username `resend`, הסיסמה היא מפתח ה-API, שולח `onboarding@resend.dev` שמגיע רק לכתובת של חשבון Resend). אם זה לא מסתדר, אפשר לדלג: ב-Authentication, Users, Add user, ליצור משתמש עם סיסמה ולסמן Auto Confirm. ב-`apps/extension/.env` להוסיף `WXT_TRIAL_PASSWORD_LOGIN=1`, ולבנות מחדש. בפאנל יופיע "כניסה עם סיסמה (גרסת הרצה)". אל תפיצו גרסה כזו לאחרים.
 - Google: אופציונלי להרצה. דורש מזהה לקוח ב-Google Cloud והגדרת כתובת הפניה של התוסף (`chrome.identity.getRedirectURL()`). בלי זה אפשר להשתמש בקוד במייל.
 
 ## 3. פונקציות
