@@ -13,9 +13,9 @@
 1. ב-supabase.com: New project. לשמור את סיסמת המסד.
 2. `pnpm install` ואז:
    ```bash
-   mkdir -p .trial && node scripts/make-trial-sql.mjs > .trial/setup.sql
+   mkdir -p .trial && node scripts/make-trial-sql.mjs > supabase/trial-setup.sql
    ```
-3. ב-Supabase: SQL Editor, להדביק את `.trial/setup.sql` ולהריץ (פעם אחת, על פרויקט ריק). הקובץ מכיל את כל המיגרציות וכללי טרמינל איקס בסטטוס `beta`.
+3. ב-Supabase: SQL Editor, להדביק את `supabase/trial-setup.sql` ולהריץ (פעם אחת, על פרויקט ריק). הקובץ מכיל את כל המיגרציות וכללי טרמינל איקס בסטטוס `beta`.
 
 ## 2. התחברות
 בלוח הבקרה: Authentication, Providers, **Email** פעיל.

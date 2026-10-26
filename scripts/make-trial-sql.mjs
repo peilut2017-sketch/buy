@@ -1,5 +1,5 @@
 // Builds one SQL file for a trial run: every migration in order, then the Terminal X rules.
-// Paste the output into the Supabase SQL editor (a new, empty project). Usage: node scripts/make-trial-sql.mjs > .trial/setup.sql
+// Paste the output into the Supabase SQL editor (a new, empty project). Usage: node scripts/make-trial-sql.mjs > supabase/trial-setup.sql
 import { readdirSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
