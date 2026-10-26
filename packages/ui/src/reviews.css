@@ -1,0 +1,23 @@
+/* Review screens: product header, summary, filters, review list and forms. Shared by the extension and the website. */
+.product { display: flex; gap: var(--space-3); align-items: flex-start; }
+.product__thumb { flex: none; inline-size: 56px; block-size: 56px; border-radius: var(--radius-sm); object-fit: cover; background: var(--sb-skeleton); }
+.product__thumb--empty { display: grid; place-items: center; color: var(--sb-text-secondary); }
+.product__text { flex: 1 1 auto; min-inline-size: 0; display: flex; flex-direction: column; gap: 2px; }
+.summary { display: flex; align-items: center; gap: var(--space-4); }
+.summary__score { font-size: 32px; line-height: 38px; font-weight: 650; font-variant-numeric: tabular-nums; }
+.filters { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; }
+.filters .sb-select { inline-size: auto; min-block-size: 32px; padding-block: 4px; font-size: 12px; }
+.toggle-chip { min-block-size: 32px; padding-inline: var(--space-3); border-radius: var(--radius-sm); border: 1px solid var(--sb-control-border); background: var(--sb-surface); font-size: 12px; }
+.toggle-chip[aria-pressed="true"] { background: var(--sb-text-primary); border-color: var(--sb-text-primary); color: var(--sb-surface); font-weight: 600; }
+.review-actions { display: flex; flex-wrap: wrap; gap: var(--space-1); margin-inline-start: calc(var(--space-2) * -1); }
+.sr-live { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); }
+.form { display: flex; flex-direction: column; gap: var(--space-4); }
+.form__section { display: flex; flex-direction: column; gap: var(--space-3); }
+.ltr-input { direction: ltr; text-align: start; }
+
+/* ---- price chart ---- */
+.sb-chart text { font: 500 11px var(--font); fill: var(--sb-text-secondary); font-variant-numeric: tabular-nums; }
+.sb-chart__grid { stroke: var(--sb-divider); stroke-width: 1; }
+.sb-chart__line { fill: none; stroke: var(--sb-text-primary); stroke-width: 2; stroke-linejoin: round; }
+.sb-chart__target { stroke: var(--sb-accent); stroke-width: 1.5; stroke-dasharray: 5 4; }
+.sb-chart__dot { fill: var(--sb-text-primary); }

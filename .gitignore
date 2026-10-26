@@ -1,10 +1,12 @@
 node_modules/
-.output/
-.wxt/
-dist/
 .env
 .env.*
 !.env.example
+.output/
+.wxt/
+dist/
 *.log
 .DS_Store
-supabase/.temp/
+test-results/
+tests/e2e/out/
+.trial/

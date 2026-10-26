@@ -1,0 +1,7 @@
+{
+  "id": "terminalx",
+  "name": "Terminal X",
+  "domains": ["terminalx.com", "www.terminalx.com"],
+  "hostPermission": "https://www.terminalx.com/*",
+  "contentMatches": ["https://www.terminalx.com/*", "https://terminalx.com/*"]
+}

@@ -1,0 +1,21 @@
+{
+  "name": "@smartbuy/web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "preview": "node build.mjs && node serve.mjs",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@smartbuy/core": "workspace:*",
+    "@smartbuy/data": "workspace:*",
+    "@smartbuy/ui": "workspace:*",
+    "@supabase/supabase-js": "^2.118.0",
+    "preact": "^10.29.8"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0"
+  }
+}

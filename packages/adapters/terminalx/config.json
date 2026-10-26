@@ -1,0 +1,27 @@
+{
+  "productUrl": "^/(?:[^/]+/)*([a-z]\\d{5}(?:\\d{4})?)/?$",
+  "signals": {
+    "canonical": { "selector": "link[rel='canonical']", "attr": "href", "skuRegex": "/([a-z]\\d{5}(?:\\d{4})?)/?(?:[?#].*)?$" },
+    "image": { "selector": "meta[property='og:image']", "attr": "content", "skuRegex": "/([a-z]\\d{9})-\\d+\\.(?:jpe?g|png|webp)" },
+    "jsonLd": { "type": "Product", "skuPath": "sku", "skuRegex": "^([a-z]\\d{5}(?:\\d{4})?)$" }
+  },
+  "parentSku": { "fromSku": "^([a-z]\\d{5})" },
+  "variants": {
+    "groups": "[class*='attribute-wrapper']",
+    "label": "[class*='label-wrapper'] > span:first-child, [class*='right-side']",
+    "option": "[data-test-id^='qa-size-item'], [data-test-id^='qa-color-item']",
+    "selected": "[class*='is-selected'], [class*=' selected_']",
+    "unavailable": "[class*='out-of-stock'], [data-test-id$='-not-available']"
+  },
+  "price": {
+    "selector": "[data-test-id='qa-pdp-price-final']",
+    "regularSelector": "[data-test-id='qa-pdp-price-regular']",
+    "currency": "ILS"
+  },
+  "listing": { "card": "li[class*='listing-product']", "link": "a[data-test-id='qa-product-link']" },
+  "emailDomains": ["terminalx.com"],
+  "productType": "apparel",
+  "sizeGroup": "מידה",
+  "colorGroup": "צבע",
+  "pageUrl": "https://www.terminalx.com/product/{sku}"
+}

@@ -1,0 +1,208 @@
+{
+  "data": {
+    "customerOrders": {
+      "first_time_user_text": "כדאי לשים לב,\r\nניתן לבצע החזרה ו/ או החלפה של פריטים מהזמנה בשירות עם שליח פעם אחת בלבד.\r\nלכן חשוב לוודא כי בצעת את כל ההחלפות וההחזרות עבור הפריטים הרלוונטיים עבורך. מידע נוסף בלינק הבא -https://www.terminalx.com/help-returns",
+      "exchange_min_amount": {
+        "currency": "ILS",
+        "value": 0
+      },
+      "count": 25,
+      "items": [
+        {
+          "retur_slip_url": "https://www.terminalx.com/returns/index/index/id/SCRUBBED_TOKEN/",
+          "order_number": "0XXXXXXXX",
+          "id": "00000000",
+          "customer_full_name": "[שם מטוהר]",
+          "created_at": "2026-10-18 07:48:18",
+          "created_at_iso": "2026-10-18T07:48:18+00:00",
+          "grand_total": 5.24,
+          "status": "complete",
+          "status_label": "נארזה",
+          "can_reorder": false,
+          "invoice_pfd": {
+            "invoice_url": "https://www.terminalx.com/_sync/invoices/send/2026-10/SCRUBBED.pdf",
+            "pdf_content": "REMOVED_BASE64_PDF (חשבונית מקורית נשמרה אצל המשתמש בלבד)"
+          },
+          "creditmemo_pfd": {
+            "invoice_url": "",
+            "pdf_content": ""
+          },
+          "print_invoice_available": true,
+          "print_creditmemo_available": false,
+          "can_exchange": {
+            "status": false,
+            "error_type": "request_already_exist",
+            "popup_text": "כדאי לשים לב, לא ניתן לבצע החלפה או החזרה בעבור הזמנה זו, שכן ניצלת אופציה זו. ניתן לקבל מידע נוסף בלינק הבא - https://www.terminalx.com/help-returns"
+          },
+          "gift_options": {
+            "action": null,
+            "gifter_name": null,
+            "phone": null,
+            "url": null
+          },
+          "items_free_gifts_for": [
+            "",
+            "",
+            ""
+          ],
+          "items_gallery": [
+            "/k/1/k126100017-11791442206.jpg?image_type_mobile=webp_jpeg_like_70",
+            "/r/8/r868090001-11783499104.jpg?image_type_mobile=webp_jpeg_like_70",
+            "/k/1/k111020001-11790661904.jpg?image_type_mobile=webp_jpeg_like_70"
+          ],
+          "items_titles": [
+            "שמלת מידי בשילוב קפלים וחגורה",
+            "WEBBING SUEDE CAMERA תיקי צד",
+            "חולצה TJW / נשים"
+          ],
+          "er_base_price": 14.9,
+          "er_base_threshold": 499
+        },
+        {
+          "retur_slip_url": "https://www.terminalx.com/returns/index/index/id/SCRUBBED_TOKEN/",
+          "order_number": "0XXXXXXXX",
+          "id": "00000000",
+          "customer_full_name": "[שם מטוהר]",
+          "created_at": "2025-10-26 19:26:22",
+          "created_at_iso": "2025-10-26T19:26:22+00:00",
+          "grand_total": 589.15,
+          "status": "refunded",
+          "status_label": "בוצע זיכוי",
+          "can_reorder": false,
+          "invoice_pfd": {
+            "invoice_url": "https://www.terminalx.com/_sync/invoices/send/2025-10/SCRUBBED.pdf",
+            "pdf_content": "REMOVED_BASE64_PDF (חשבונית מקורית נשמרה אצל המשתמש בלבד)"
+          },
+          "creditmemo_pfd": {
+            "invoice_url": "https://www.terminalx.com/_sync/invoices/send/2025-11/SCRUBBED.pdf",
+            "pdf_content": "REMOVED_BASE64_PDF (חשבונית מקורית נשמרה אצל המשתמש בלבד)"
+          },
+          "print_invoice_available": true,
+          "print_creditmemo_available": true,
+          "can_exchange": {
+            "status": false,
+            "error_type": "request_already_exist",
+            "popup_text": "כדאי לשים לב, לא ניתן לבצע החלפה או החזרה בעבור הזמנה זו, שכן ניצלת אופציה זו. ניתן לקבל מידע נוסף בלינק הבא - https://www.terminalx.com/help-returns"
+          },
+          "gift_options": {
+            "action": "deliver_to_customer",
+            "gifter_name": "",
+            "phone": "[טוהר]",
+            "url": "https://www.terminalx.com/giftcenter/10983476?hash=SCRUBBED"
+          },
+          "items_free_gifts_for": [
+            "",
+            "",
+            ""
+          ],
+          "items_gallery": [
+            "/w/6/w626980007-11790595610.jpg?image_type_mobile=webp_jpeg_like_70",
+            "/w/4/w489330018-11716818729.jpg?image_type_mobile=webp_jpeg_like_70",
+            "/w/2/w254780001-11705409104.jpg?image_type_mobile=webp_jpeg_like_70"
+          ],
+          "items_titles": [
+            "קרדיגן ETCHהיקרוטS CABLE KNIT CARDIGA",
+            "סניקרס NEW BALANCE 327 / נשים",
+            "מכנסי כדורסל Nike Icon"
+          ],
+          "er_base_price": 14.9,
+          "er_base_threshold": 499
+        },
+        {
+          "retur_slip_url": "https://www.terminalx.com/returns/index/index/id/SCRUBBED_TOKEN/",
+          "order_number": "0XXXXXXXX",
+          "id": "00000000",
+          "customer_full_name": "[שם מטוהר]",
+          "created_at": "2025-09-16 18:35:53",
+          "created_at_iso": "2025-09-16T18:35:53+00:00",
+          "grand_total": 1.85,
+          "status": "complete",
+          "status_label": "נארזה",
+          "can_reorder": false,
+          "invoice_pfd": {
+            "invoice_url": "https://www.terminalx.com/_sync/invoices/send/2025-09/SCRUBBED.pdf",
+            "pdf_content": "REMOVED_BASE64_PDF (חשבונית מקורית נשמרה אצל המשתמש בלבד)"
+          },
+          "creditmemo_pfd": {
+            "invoice_url": "",
+            "pdf_content": ""
+          },
+          "print_invoice_available": true,
+          "print_creditmemo_available": false,
+          "can_exchange": {
+            "status": false,
+            "error_type": "time_window",
+            "popup_text": "שים לב, מאחר ועברו יותר מ\r\n50\r\nימים, לא ניתן לבצע החלפה להזמנתך. במידת הצורך יש לפנות לשירות לקוחות "
+          },
+          "gift_options": {
+            "action": null,
+            "gifter_name": null,
+            "phone": null,
+            "url": null
+          },
+          "items_free_gifts_for": [
+            "",
+            ""
+          ],
+          "items_gallery": [
+            "/w/8/w884710005-11741255113.jpg?image_type_mobile=webp_jpeg_like_70",
+            "/w/9/w904750001-11739699540.jpg?image_type_mobile=webp_jpeg_like_70"
+          ],
+          "items_titles": [
+            "חולצה מכופתרת עם לוגו",
+            "תיק אימון עם לוגו / נשים"
+          ],
+          "er_base_price": 14.9,
+          "er_base_threshold": 499
+        },
+        {
+          "retur_slip_url": "https://www.terminalx.com/returns/index/index/id/SCRUBBED_TOKEN/",
+          "order_number": "0XXXXXXXX",
+          "id": "00000000",
+          "customer_full_name": "[שם מטוהר]",
+          "created_at": "2024-10-06 20:01:07",
+          "created_at_iso": "2024-10-06T20:01:07+00:00",
+          "grand_total": 0.61,
+          "status": "complete",
+          "status_label": "נארזה",
+          "can_reorder": false,
+          "invoice_pfd": {
+            "invoice_url": "https://www.terminalx.com/_sync/invoices/send/2024-10/SCRUBBED.pdf",
+            "pdf_content": "REMOVED_BASE64_PDF (חשבונית מקורית נשמרה אצל המשתמש בלבד)"
+          },
+          "creditmemo_pfd": {
+            "invoice_url": "",
+            "pdf_content": ""
+          },
+          "print_invoice_available": true,
+          "print_creditmemo_available": false,
+          "can_exchange": {
+            "status": false,
+            "error_type": "time_window",
+            "popup_text": "שים לב, מאחר ועברו יותר מ\r\n50\r\nימים, לא ניתן לבצע החלפה להזמנתך. במידת הצורך יש לפנות לשירות לקוחות "
+          },
+          "gift_options": {
+            "action": null,
+            "gifter_name": null,
+            "phone": null,
+            "url": null
+          },
+          "items_free_gifts_for": [
+            "",
+            ""
+          ],
+          "items_gallery": [
+            "/w/4/w420560968-11791108305.jpg?image_type_mobile=webp_jpeg_like_70",
+            "/w/5/w593142913-11759232153.jpg?image_type_mobile=webp_jpeg_like_70"
+          ],
+          "items_titles": [
+            "טבעת עם פרטי איטרניטי לאב מוד, כסף סטרלינג",
+            "טבעת זוהר ספירלי"
+          ],
+          "er_base_price": 9.9,
+          "er_base_threshold": 499.99
+        }
+      ]
+    }
+  }
+}

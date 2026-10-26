@@ -1,0 +1,69 @@
+# Trial run without a terminal: deploys the Edge Functions to the Supabase trial project and builds the extension,
+# all from the GitHub "Actions" tab (Run workflow). See docs/11-trial-run.md.
+name: Trial build and deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      deploy_functions:
+        description: "Deploy the Edge Functions to Supabase"
+        type: boolean
+        default: true
+      build_extension:
+        description: "Build the extension (download it from the run page)"
+        type: boolean
+        default: true
+      password_login:
+        description: "Trial only: show the email + password sign-in in the extension"
+        type: boolean
+        default: false
+
+jobs:
+  functions:
+    if: ${{ inputs.deploy_functions }}
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Check the secrets are set
+        run: |
+          test -n "$SUPABASE_ACCESS_TOKEN" || { echo "Missing secret SUPABASE_ACCESS_TOKEN"; exit 1; }
+          test -n "$SUPABASE_PROJECT_REF" || { echo "Missing secret SUPABASE_PROJECT_REF"; exit 1; }
+      - name: Deploy every function
+        run: scripts/deploy-functions.sh
+
+  extension:
+    if: ${{ inputs.build_extension }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Check the secrets are set
+        env:
+          URL: ${{ secrets.SUPABASE_URL }}
+          KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          test -n "$URL" || { echo "Missing secret SUPABASE_URL"; exit 1; }
+          test -n "$KEY" || { echo "Missing secret SUPABASE_ANON_KEY"; exit 1; }
+      - name: Build
+        env:
+          WXT_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          WXT_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          WXT_TRIAL_PASSWORD_LOGIN: ${{ inputs.password_login && '1' || '' }}
+        run: pnpm build:ext
+      - run: pnpm check:manifest
+      - uses: actions/upload-artifact@v4
+        with:
+          name: smartbuy-extension
+          path: apps/extension/.output/chrome-mv3
+          if-no-files-found: error
