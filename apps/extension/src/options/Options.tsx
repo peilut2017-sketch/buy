@@ -4,6 +4,7 @@ import { useSession } from "../lib/auth.ts";
 import { BACKEND_CONFIGURED } from "../lib/env.ts";
 import { LISTING_SETTING } from "../lib/settings.ts";
 import { getLocal, setLocal } from "../lib/storage.ts";
+import { Diagnostics } from "./Diagnostics.tsx";
 import { StoreList } from "./StoreList.tsx";
 
 function Section({ title, children }: { title: string; children: preact.ComponentChildren }) {
@@ -70,6 +71,8 @@ export function Options() {
             <Section title="הפרטיות שלכם"><DataControls identity={session.identity} /></Section>
           </>
         )}
+
+        <Section title="בדיקת חיבור לשרת"><Diagnostics /></Section>
 
         <Section title="איך זה עובד">
           <p class="sb-t-body">SmartBuy הוא שירות עצמאי ואין לו קשר לחנויות. סדר הביקורות ותוכנן לא מושפעים מהכנסה או מפרסום. ביקורת מאומתת מסומנת ככזו רק כשהרכישה אומתה.</p>
