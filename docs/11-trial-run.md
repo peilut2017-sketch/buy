@@ -4,6 +4,20 @@
 
 **מה אי אפשר לעשות בלעדיכם:** ליצור פרויקט Supabase (צריך חשבון שלכם) ולהכניס את המפתחות. את כל השאר הכנתי, ובדקתי על Postgres מקומי ועל עמודים שמורים. **ההרצה הזו על האתר החי היא הבדיקה הראשונה מול השירותים האמיתיים**, אז צפויות תקלות קטנות. תעדו אותן ונתקן.
 
+## בלי טרמינל: הכול מהדפדפן (GitHub Actions)
+אם אין לכם טרמינל, שלבים 3 ו-4 למטה (פריסת פונקציות ובניית התוסף) רצים ב-GitHub:
+
+1. ב-GitHub, במאגר: Settings, Secrets and variables, Actions, "New repository secret". ליצור ארבעה סודות:
+   - `SUPABASE_ACCESS_TOKEN`: טוקן אישי מ-supabase.com/dashboard/account/tokens ("Generate new token").
+   - `SUPABASE_PROJECT_REF`: `sinfarwyndkreufwpjiy`.
+   - `SUPABASE_URL`: `https://sinfarwyndkreufwpjiy.supabase.co`.
+   - `SUPABASE_ANON_KEY`: מפתח ה-anon (Project Settings, API). לא `service_role`.
+2. לשונית Actions, "Trial build and deploy", "Run workflow", לבחור את הענף `claude/build-phase-1`. לסמן "Trial only: show the email + password sign-in" אם אין SMTP. להריץ.
+3. כשהריצה ירוקה: בדף הריצה, בתחתית, Artifacts, להוריד `smartbuy-extension` ולפרוק את ה-ZIP לתיקייה.
+4. בכרום: `chrome://extensions`, מצב מפתח, "טעינת תוסף שאינו ארוז", לבחור את התיקייה שפרקתם.
+
+הטוקן והמפתחות נשארים ב-Secrets של GitHub ולא נכנסים לקוד. אחרי ההרצה אפשר למחוק את הטוקן ב-Supabase.
+
 ## מה צריך
 - Node 22 ו-pnpm (`corepack enable`), כרום.
 - חשבון Supabase (שכבה חינמית מספיקה) ו-[Supabase CLI](https://supabase.com/docs/guides/cli).
