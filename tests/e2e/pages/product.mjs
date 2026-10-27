@@ -47,3 +47,9 @@ function variantBlock() {
     setTimeout(() => { document.querySelectorAll("#colors > div").forEach((c) => c.className = "color-item_x"); el.className = "color-item_x selected_x"; }, 150);
   }));</script>`;
 }
+
+/** The store's "my orders" page. SYNTHETIC: it asks for the order list the way the real page does, with its own fetch. */
+export function ordersPage() {
+  return `<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8"><title>ההזמנות שלי (דף בדיקה)</title></head><body style="background:#fff;color:#222;font:16px Arial"><h1>ההזמנות שלי</h1><div id="out">טוענים…</div>
+<script>setTimeout(async () => { const r = await fetch("/pg/QueryCustomerOrders?v=test"); const j = await r.json(); document.getElementById("out").textContent = j.data.customerOrders.count + " הזמנות"; }, 100);</script></body></html>`;
+}

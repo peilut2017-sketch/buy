@@ -34,9 +34,14 @@ describe("validateReview", () => {
     expect(r).toMatchObject({ ok: true, value: { purchaseMonth: null } });
   });
 
-  it("requires the purchase month for an unverified review with text", () => {
+  it("does not require the purchase month, and keeps none when it is left empty", () => {
     const r = validateReview({ rating: 4, body: text, answers: { fit: "exact" } }, ctx());
-    expect(r).toEqual({ ok: false, errors: { purchaseMonth: "בחרו את חודש הרכישה." } });
+    expect(r).toMatchObject({ ok: true, value: { purchaseMonth: null } });
+    expect(validateReview({ rating: 4, body: text, answers: { fit: "exact" }, purchaseMonth: "" }, ctx()).ok).toBe(true);
+  });
+
+  it("rejects a purchase month that is given but not a month", () => {
+    expect(validateReview({ rating: 4, body: text, answers: { fit: "exact" }, purchaseMonth: "soon" }, ctx())).toEqual({ ok: false, errors: { purchaseMonth: "בחרו חודש רכישה תקין." } });
   });
 
   it("rejects a purchase month in the future but allows the current month", () => {
@@ -72,8 +77,7 @@ describe("validateReview", () => {
       errors: {
         rating: "בחרו דירוג בין 1 ל-5 כוכבים.",
         body: "כתבו כמה מילים על המוצר.",
-        fit: "בחרו איך המידה.",
-        purchaseMonth: "בחרו את חודש הרכישה.",
+        fit: "בחרו איך המידה.", // only because this test's context marks it required
       },
     });
   });

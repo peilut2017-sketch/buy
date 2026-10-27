@@ -2,8 +2,8 @@
 // to order checks. Privacy rule 7: only a hash of the order number is stored, plus dates and SKUs.
 
 import { BAD_REQUEST, fail, isRecord, ok, todayIso } from "../http.ts";
-import { canWriteVerified, hashOrderNumber, pendingDueAt, validateOrderInput, type OrderInput } from "../orders.ts";
-import { checkParentSku, cleanSku, requireProfile, type Handler } from "./context.ts";
+import { ESTIMATED_DELIVERY_DAYS, addDays, canWriteVerified, hashOrderNumber, pendingDueAt, validateOrderInput, type OrderInput } from "../orders.ts";
+import { checkParentSku, cleanLabel, cleanSku, cleanUrl, requireProfile, type Handler } from "./context.ts";
 
 const MAX_ORDERS = 50;
 
@@ -22,8 +22,28 @@ export const verifyOrders: Handler = async (ctx, body) => {
   if (!site.adapterConfig.productType || !site.adapterConfig.parentSku?.fromSku) return fail(503, "החנות עוד לא הוגדרה לאימות הזמנות.");
 
   const settings = await ctx.store.getSettings();
+  // Pictures come from the store's media host (a sibling subdomain), so any address under the store's registrable domain passes.
+  const ownImage = (value: unknown): string | null => {
+    const url = cleanUrl(value);
+    try {
+      if (!url) return null;
+      const host = new URL(url).hostname;
+      return site.domains.some((d) => host === d || host.endsWith(`.${d.replace(/^www\./, "")}`)) ? url : null;
+    } catch {
+      return null;
+    }
+  };
   const today = todayIso(ctx.now);
   const summary = { accepted: 0, alreadyKnown: 0, conflicts: 0, rejected: 0, upgraded: 0 };
+  // Addresses from the client are used only when they point at one of the store's own domains.
+  const ownAddress = (value: unknown): string | null => {
+    const url = cleanUrl(value);
+    try {
+      return url && site.domains.includes(new URL(url).hostname) ? url : null;
+    } catch {
+      return null;
+    }
+  };
 
   for (const raw of body.orders as unknown[]) {
     const order = raw as OrderInput;
@@ -53,7 +73,16 @@ export const verifyOrders: Handler = async (ctx, body) => {
         items.push({ sku, productId: null, variantId: null });
         continue;
       }
-      const product = await ctx.store.upsertProduct({ siteId, parentSku: parent, name: null, brand: null, imageUrl: null, url: null, productType: site.adapterConfig.productType, now: ctx.now.toISOString() });
+      const product = await ctx.store.upsertProduct({
+        siteId,
+        parentSku: parent,
+        name: cleanLabel(item.name, 200),
+        brand: null,
+        imageUrl: ownImage(item.imageUrl),
+        url: ownAddress(item.url),
+        productType: site.adapterConfig.productType,
+        now: ctx.now.toISOString(),
+      });
       items.push({ sku, productId: product.id, variantId: await ctx.store.upsertVariant(product.id, sku, {}) });
     }
     if (items.length === 0) {
@@ -61,18 +90,21 @@ export const verifyOrders: Handler = async (ctx, body) => {
       continue;
     }
 
-    const stored = await ctx.store.insertOrder({ userId: ctx.user.id, siteId, orderHash, orderedAt: order.orderedAt, deliveredAt: order.deliveredAt, source: "extension", items });
+    // No delivery date in the store's list: assume one a week after the order, and say so in the record.
+    const estimated = order.deliveredAt === null && order.orderedAt !== null;
+    const deliveredAt = estimated ? addDays(order.orderedAt as string, ESTIMATED_DELIVERY_DAYS) : order.deliveredAt;
+    const stored = await ctx.store.insertOrder({ userId: ctx.user.id, siteId, orderHash, orderedAt: order.orderedAt, deliveredAt, deliveryEstimated: estimated, source: "extension", items });
     summary.accepted++;
 
     for (const [index, item] of items.entries()) {
       const orderItemId = stored.itemIds[index];
-      if (item.productId === null || orderItemId === undefined || !order.deliveredAt) continue;
-      if (canWriteVerified(order.deliveredAt, today)) {
-        summary.upgraded += await ctx.store.upgradeReviewsFromOrder({ userId: ctx.user.id, productId: item.productId, orderItemId, orderedAt: order.orderedAt, deliveredAt: order.deliveredAt });
+      if (item.productId === null || orderItemId === undefined || !deliveredAt) continue;
+      if (canWriteVerified(deliveredAt, today)) {
+        summary.upgraded += await ctx.store.upgradeReviewsFromOrder({ userId: ctx.user.id, productId: item.productId, orderItemId, orderedAt: order.orderedAt, deliveredAt });
       }
       const review = await ctx.store.findReview(ctx.user.id, item.productId);
       if (!review || review.body === null) {
-        await ctx.store.addPending({ userId: ctx.user.id, orderItemId, productId: item.productId, dueAt: pendingDueAt(order.deliveredAt, settings.notifications.pendingAfterDeliveryDays) });
+        await ctx.store.addPending({ userId: ctx.user.id, orderItemId, productId: item.productId, dueAt: pendingDueAt(deliveredAt, settings.notifications.pendingAfterDeliveryDays) });
       }
     }
   }

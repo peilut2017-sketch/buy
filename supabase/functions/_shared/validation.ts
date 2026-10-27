@@ -128,7 +128,7 @@ export function validateAnswers(raw: unknown): Validation<ReviewAnswers> {
 /**
  * Validates a review before it is stored.
  * A review without text is a quick rating: it needs only a rating and is never published.
- * A review with text also needs the required answers, and a purchase month unless it is verified.
+ * A review with text needs the answers the category marks as required (none by default) and, if a purchase month is given, a valid one.
  */
 export function validateReview(input: ReviewInput, ctx: ReviewContext): Validation<CleanReview> {
   const limits = { ...DEFAULT_REVIEW_LIMITS, ...ctx.limits };
@@ -168,10 +168,11 @@ export function validateReview(input: ReviewInput, ctx: ReviewContext): Validati
         }
       }
     }
-    if (!ctx.verified) {
+    // The purchase month is optional: it only adds "written N weeks after buying" to an unverified review.
+    if (!ctx.verified && input.purchaseMonth !== undefined && input.purchaseMonth !== null && input.purchaseMonth !== "") {
       purchaseMonth = normalizeMonth(input.purchaseMonth);
       if (purchaseMonth === null) {
-        errors.purchaseMonth = "בחרו את חודש הרכישה.";
+        errors.purchaseMonth = "בחרו חודש רכישה תקין.";
       } else if (purchaseMonth.slice(0, 7) > ctx.now.toISOString().slice(0, 7)) {
         errors.purchaseMonth = "חודש הרכישה לא יכול להיות בעתיד.";
       }

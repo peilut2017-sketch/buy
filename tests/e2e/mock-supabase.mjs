@@ -26,6 +26,8 @@ export function startMock(port) {
     audit: [{ id: 1, action: "decide_report", target_type: "report", target_id: "9", created_at: "2026-10-20T09:00:00Z", details: { reason: "ספאם ברור" } }],
     siteStatus: "beta",
     termsVersion: "2026-10-25",
+    orderConsent: false,
+    verifiedOrders: [],
     watches: [],
     updates: [],
     sizeProfile: [],
@@ -191,6 +193,10 @@ export function startMock(port) {
     if (p === "/rest/v1/profiles") {
       if (req.method === "PATCH") {
         const patch = JSON.parse(body || "{}");
+        if ("order_check_consent" in patch) {
+          state.orderConsent = patch.order_check_consent === true;
+          return send(200, [{ id: ME }]);
+        }
         const extra = Object.keys(patch).filter((k) => k in state.profileExtra);
         if (extra.length > 0) {
           for (const k of extra) state.profileExtra[k] = patch[k];
@@ -203,7 +209,7 @@ export function startMock(port) {
       if (url.searchParams.get("select")?.includes("created_at")) {
         return send(200, [{ id: ME, display_name: state.nickname, role: "user", blocked_at: null, created_at: "2026-09-01T09:00:00Z" }, { id: "00000000-0000-4000-8000-000000000001", display_name: "בודק_א", role: "user", blocked_at: null, created_at: "2026-09-02T09:00:00Z" }]);
       }
-      return send(200, [{ display_name: state.nickname, role: state.role, quiet_mode: false, order_check_consent: false, show_listing_stars: true, terms_version: state.termsVersion, ...state.profileExtra }]);
+      return send(200, [{ display_name: state.nickname, role: state.role, quiet_mode: false, order_check_consent: state.orderConsent, show_listing_stars: true, terms_version: state.termsVersion, ...state.profileExtra }]);
     }
     if (p === "/rest/v1/order_items") return send(200, []);
     if (p === "/rest/v1/pending_reviews") return send(200, state.pending);
@@ -216,6 +222,11 @@ export function startMock(port) {
       if (input.version !== "2026-10-25") return send(409, { message: "תנאי השימוש התעדכנו." });
       state.termsVersion = input.version;
       return send(200, { version: input.version });
+    }
+    if (p === "/functions/v1/verify-orders") {
+      const input = JSON.parse(body || "{}");
+      state.verifiedOrders.push(...input.orders);
+      return send(200, { accepted: input.orders.length, alreadyKnown: 0, conflicts: 0, rejected: 0, upgraded: 0 });
     }
     if (p === "/functions/v1/review-update") {
       if (state.updateFails) return send(500, { message: "boom" });

@@ -410,3 +410,25 @@ export async function getListingSummaries(siteId: string, parentSkus: readonly s
 export function acceptTerms(token: string, version: string): Promise<{ version: string }> {
   return callFunction<{ version: string }>("accept-terms", { version }, token);
 }
+
+/* ---------------------------------------------------------------- orders */
+
+export interface OrderPayload {
+  orderNumber: string;
+  orderedAt: string | null;
+  deliveredAt: string | null;
+  items: { sku: string; name?: string; url?: string; imageUrl?: string }[];
+}
+
+export interface VerifyOrdersResult {
+  accepted: number;
+  alreadyKnown: number;
+  conflicts: number;
+  rejected: number;
+  upgraded: number;
+}
+
+/** Sends orders the person's own browser read from the store's "my orders" page. The server stores a hash of the number, never the number. */
+export function verifyOrders(token: string, siteId: string, orders: OrderPayload[]): Promise<VerifyOrdersResult> {
+  return callFunction<VerifyOrdersResult>("verify-orders", { siteId, orders }, token);
+}

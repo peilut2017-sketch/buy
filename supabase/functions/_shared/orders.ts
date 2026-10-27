@@ -3,7 +3,17 @@
 
 export interface OrderItemInput {
   sku: string;
+  /** The title, address and picture the store's order list shows. Used only to describe a product we have not seen. */
+  name?: string;
+  url?: string;
+  imageUrl?: string;
 }
+
+/**
+ * When the store's order list has no delivery date, the delivery is assumed a week after the order ("עד 5 ימי עסקים").
+ * It is stored as an estimate, so a review can open as verified about a week after the order and not before.
+ */
+export const ESTIMATED_DELIVERY_DAYS = 7;
 
 export interface OrderInput {
   /** The store's order number. Hashed immediately; never persisted. */

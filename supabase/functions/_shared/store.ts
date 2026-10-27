@@ -129,6 +129,8 @@ export interface OrderToStore {
   orderHash: string;
   orderedAt: string | null;
   deliveredAt: string | null;
+  /** The delivery date is an assumption (the store's list has none), not something the store reported. */
+  deliveryEstimated?: boolean;
   source: "extension" | "email" | "order_lookup";
   items: { sku: string; productId: number | null; variantId: number | null }[];
 }
