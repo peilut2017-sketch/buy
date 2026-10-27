@@ -733,6 +733,31 @@ await check("popup (signed in) shows the empty waiting list and the quiet-mode s
   await page.close();
 });
 
+await check("the popup lists purchases that have no review yet, and says when the orders page was last read", async () => {
+  const product = (id, name, sku) => ({ id, name, url: `https://www.terminalx.com/product/${sku}`, image_url: null, site_id: "terminalx", parent_sku: sku.slice(0, 6).toLowerCase() });
+  mock.state.purchases = [
+    { id: 1, product_id: 1, products: product(1, "מכנסי בדיקה שכבר יש עליהם ביקורת", "W817260002"), orders: { ordered_at: "2026-10-18" } },
+    { id: 2, product_id: 5, products: product(5, "שמלה לבדיקה", "K126100017"), orders: { ordered_at: "2026-10-18" } },
+    { id: 3, product_id: 5, products: product(5, "שמלה לבדיקה", "K126100017"), orders: { ordered_at: "2026-09-01" } },
+  ];
+  const page = await context.newPage();
+  await page.setViewportSize({ width: 360, height: 640 });
+  await page.goto(env.extUrl("popup.html"));
+  await page.getByRole("heading", { name: "רכישות שעוד אין עליהן ביקורת" }).waitFor();
+  const list = page.getByRole("list", { name: "רכישות בלי ביקורת" });
+  await list.waitFor();
+  const text = await list.innerText();
+  assert.ok(text.includes("שמלה לבדיקה") && text.includes("הוזמן ב-18.10.2026"), text);
+  assert.ok(!text.includes("שכבר יש עליהם ביקורת"), "a reviewed product must not be listed");
+  assert.equal(await list.locator("li").count(), 1, "one row per product");
+  assert.ok((await page.locator("body").innerText()).includes("עמוד ההזמנות נקרא"), "the last read must be shown after the orders page was read");
+  await shot(page, "popup-purchases");
+  const violations = await runAxe(page, "popup-purchases");
+  assert.deepEqual(violations, [], JSON.stringify(violations));
+  mock.state.purchases = [];
+  await page.close();
+});
+
 await check("popup lists a product waiting for a review and saves a quick rating", async () => {
   mock.state.pending = [{ order_item_id: 7, due_at: "2026-10-01T00:00:00Z", products: { id: 1, site_id: "terminalx", parent_sku: "w81726", name: "חולצת בדיקה", image_url: null, url: "https://www.terminalx.com/w817260002", product_type: "apparel" }, order_items: { sku: "w817260002" } }];
   const page = await context.newPage();

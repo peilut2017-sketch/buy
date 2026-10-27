@@ -27,6 +27,7 @@ export function startMock(port) {
     siteStatus: "beta",
     termsVersion: "2026-10-25",
     orderConsent: false,
+    purchases: [],
     verifiedOrders: [],
     watches: [],
     updates: [],
@@ -169,7 +170,7 @@ export function startMock(port) {
     if (p === "/rest/v1/reviews") {
       if (req.method === "DELETE") return send(200, [{ id: Number(q("id")) }]);
       if (url.searchParams.has("user_id")) {
-        return send(200, [{ id: 1, rating: 5, title: null, body: "ביקורת בדיקה שלי עם מספיק טקסט כדי להיראות כמו ביקורת אמיתית.", status: "visible", written_at: "2026-10-10T09:00:00Z", helpful_count: 2, products: { site_id: "terminalx", parent_sku: "w81726", name: "מכנסי בדיקה" } }, { id: 2, rating: 3, title: null, body: null, status: "visible", written_at: "2026-10-11T09:00:00Z", helpful_count: 0, products: { site_id: "terminalx", parent_sku: "w90003", name: "חולצת בדיקה" } }]);
+        return send(200, [{ id: 1, product_id: 1, rating: 5, title: null, body: "ביקורת בדיקה שלי עם מספיק טקסט כדי להיראות כמו ביקורת אמיתית.", status: "visible", written_at: "2026-10-10T09:00:00Z", helpful_count: 2, products: { site_id: "terminalx", parent_sku: "w81726", name: "מכנסי בדיקה" } }, { id: 2, product_id: 3, rating: 3, title: null, body: null, status: "visible", written_at: "2026-10-11T09:00:00Z", helpful_count: 0, products: { site_id: "terminalx", parent_sku: "w90003", name: "חולצת בדיקה" } }]);
       }
       if (q("product_id") === "3") return send(200, data.reviews.slice(0, 2).map((r, i) => ({ ...r, id: 300 + i })));
       const rows = [...data.reviews];
@@ -211,7 +212,7 @@ export function startMock(port) {
       }
       return send(200, [{ display_name: state.nickname, role: state.role, quiet_mode: false, order_check_consent: state.orderConsent, show_listing_stars: true, terms_version: state.termsVersion, ...state.profileExtra }]);
     }
-    if (p === "/rest/v1/order_items") return send(200, []);
+    if (p === "/rest/v1/order_items") return send(200, state.purchases);
     if (p === "/rest/v1/pending_reviews") return send(200, state.pending);
 
     if (p === "/functions/v1/events") return send(200, { ok: true });

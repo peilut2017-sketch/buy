@@ -1,6 +1,6 @@
 import { formatDateHe } from "@smartbuy/core";
 import { ApiError, deleteReview, getPendingReviews, rest, type Identity, type PendingReview } from "@smartbuy/data";
-import { AccountPanel, Button, DataControls, Notice, NotificationSettingsPanel, SizeProfilePanel, RequireAccount, RequireTerms, Skel, Stars, WatchList, useResource } from "@smartbuy/ui";
+import { AccountPanel, Button, DataControls, Notice, NotificationSettingsPanel, SizeProfilePanel, RequireAccount, RequireTerms, PurchasesList, Skel, Stars, WatchList, useResource } from "@smartbuy/ui";
 import { useState } from "preact/hooks";
 import { boot } from "../lib/boot.tsx";
 import { Shell } from "../shell.tsx";
@@ -86,6 +86,13 @@ function Pending({ identity }: { identity: Identity }) {
   );
 }
 
+/** Purchases without a review, leaving out the ones the "waiting for a review" list above already shows. */
+function Purchases({ identity }: { identity: Identity }) {
+  const pending = useResource(() => getPendingReviews(identity.token), [identity.userId]);
+  if (pending.status === "loading") return <Skel width="70%" height="36px" />;
+  return <PurchasesList identity={identity} excludeProductIds={pending.status === "ready" ? pending.data.map((p: PendingReview) => p.product.id) : []} />;
+}
+
 function Section({ title, children }: { title: string; children: preact.ComponentChildren }) {
   return (
     <section class="web__card sb-stack sb-gap-3">
@@ -105,6 +112,7 @@ function Account() {
             <Section title="פרטים"><AccountPanel identity={identity} /></Section>
             <Section title="הביקורות שלי"><MyReviews identity={identity} /></Section>
             <Section title="ממתינים לביקורת"><Pending identity={identity} /></Section>
+            <Section title="רכישות שעוד אין עליהן ביקורת"><Purchases identity={identity} /></Section>
             <RequireTerms identity={identity}>
             <Section title="מוצרים במעקב"><WatchList identity={identity} productHref={(w) => `/${w.product.siteId}/${w.sku ?? w.product.parentSku}`} /></Section>
             <Section title="התראות"><NotificationSettingsPanel identity={identity} /></Section>

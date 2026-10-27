@@ -1,6 +1,7 @@
-import { Button, IconButton, Notice, Root, Skel, StarInput, Switch, SignInCard, WatchList, RequireTerms } from "@smartbuy/ui";
+import { Button, IconButton, Notice, Root, Skel, StarInput, Switch, SignInCard, WatchList, RequireTerms, PurchasesList } from "@smartbuy/ui";
 import { browser } from "wxt/browser";
-import { useState } from "preact/hooks";
+import { useEffect, useState } from "preact/hooks";
+import { getLocal } from "../lib/storage.ts";
 import { useSession, type Identity } from "../lib/auth.ts";
 import { dismissPending, getPendingReviews, getProfile, setProfileFlag, submitReview, type PendingReview } from "@smartbuy/data";
 import { BACKEND_CONFIGURED } from "../lib/env.ts";
@@ -70,6 +71,16 @@ function PendingItem({ item, identity, onChanged }: { item: PendingReview; ident
   );
 }
 
+/** When the orders page was last read, so the person can see that it worked. */
+function OrdersStatus() {
+  const [status, setStatus] = useState<{ at: number; read: number } | null>(null);
+  useEffect(() => {
+    void getLocal<{ at: number; read: number }>("ordersStatus").then(setStatus, () => undefined);
+  }, []);
+  if (!status) return <p class="sb-t-support sb-secondary">עוד לא נקרא עמוד ההזמנות. אחרי שתפתחו אותו בחנות, התוסף יקרא אותו ויציג כאן את הרכישות.</p>;
+  return <p class="sb-t-support sb-secondary">עמוד ההזמנות נקרא ב-{new Date(status.at).toLocaleString("he-IL", { dateStyle: "short", timeStyle: "short" })}: {status.read} הזמנות.</p>;
+}
+
 function SignedIn({ identity }: { identity: Identity }) {
   const pending = useResource(() => getPendingReviews(identity.token), [identity.userId]);
   const profile = useResource(() => getProfile(identity.token, identity.userId), [identity.userId]);
@@ -101,6 +112,12 @@ function SignedIn({ identity }: { identity: Identity }) {
             {pending.data.map((item) => <PendingItem key={item.orderItemId} item={item} identity={identity} onChanged={pending.reload} />)}
           </ul>
         )}
+      </section>
+      <hr class="sb-rule" />
+      <section class="sb-stack sb-gap-2" aria-labelledby="buy-h">
+        <h2 class="sb-t-heading" id="buy-h">רכישות שעוד אין עליהן ביקורת</h2>
+        <PurchasesList identity={identity} excludeProductIds={pending.status === "ready" ? pending.data.map((p) => p.product.id) : []} />
+        <OrdersStatus />
       </section>
       <hr class="sb-rule" />
       <section class="sb-stack sb-gap-2" aria-labelledby="watch-h">
