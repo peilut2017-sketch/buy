@@ -43,6 +43,14 @@ export function ReviewForm({ target, identity, existing, questions, hasOrder, on
   const submit = async (e: Event) => {
     e.preventDefault();
     // The text is what makes it a review, so the form requires it and shows every problem at once.
+    // The colour and size on the page (whatever the store lists) are the only details required besides the rating and the text.
+    const missing: Record<string, string> = {};
+    for (const group of target.variantOptions) if (!variant[group.name]) missing[`variant:${group.name}`] = `בחרו ${group.name}.`;
+    if (Object.keys(missing).length > 0) {
+      const early = validateReview({ rating, title, body, answers, purchaseMonth: month || null }, { verified: hasOrder, requiredAnswers: questions.filter((q) => q.required).map((q) => q.key), now: new Date(), requireBody: true });
+      setErrors({ ...(early.ok ? {} : early.errors), ...missing });
+      return;
+    }
     const checked = validateReview(
       { rating, title, body, answers, purchaseMonth: month || null },
       { verified: hasOrder, requiredAnswers: questions.filter((q) => q.required).map((q) => q.key), now: new Date(), requireBody: true },
@@ -127,6 +135,7 @@ export function ReviewForm({ target, identity, existing, questions, hasOrder, on
                   onChange={(v) => setVariant((cur) => ({ ...cur, [g.name]: v }))}
                   options={g.values.map((v) => ({ value: v.value, label: v.value }))}
                   placeholder="בחירה"
+                  error={errors[`variant:${g.name}`]}
                   disabled={sending}
                 />
               ))
@@ -177,7 +186,7 @@ export function ReviewForm({ target, identity, existing, questions, hasOrder, on
 
       {!hasOrder && (
         <SelectField
-          label="מתי קניתם?"
+          label="מתי קניתם? (לא חובה)"
           hint="החודש מוצג ליד הביקורת, מסומן כדיווח שלכם."
           value={month}
           onChange={setMonth}

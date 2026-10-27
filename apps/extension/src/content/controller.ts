@@ -5,6 +5,7 @@ import { send, type PanelMode, type ProductSnapshot, type SiteConfigResult } fro
 import type { RegisteredSite } from "../lib/sites.ts";
 import { isReportableFailure, readPage } from "./detect.ts";
 import { ListingStars } from "./listing.tsx";
+import { OrdersCapture } from "./orders.tsx";
 import { mountStrip, type MountedStrip } from "./mount.ts";
 import type { StripPrice, StripProps, StripState } from "./Strip.tsx";
 
@@ -14,6 +15,7 @@ const RETRY_DELAYS_MS = [0, 1_000, 3_000];
 export class PageController {
   private strip: MountedStrip | null = null;
   private readonly listing: ListingStars;
+  private readonly orders: OrdersCapture;
   private shown: string | null = null;
   private dismissed = new Set<string>();
   private reported = new Set<string>();
@@ -25,6 +27,9 @@ export class PageController {
 
   constructor(private readonly site: RegisteredSite, private readonly doc: Document, private readonly win: Window) {
     this.listing = new ListingStars(site, doc);
+    this.orders = new OrdersCapture(site, doc, win);
+    // Listening costs nothing until the hook hands over an orders list, so it starts with the page.
+    this.orders.start(() => this.config?.config ?? site.bundled.config);
   }
 
   /** Call on first load and whenever the address changes without a page load. */
@@ -61,6 +66,7 @@ export class PageController {
 
   destroy(): void {
     this.runId++;
+    this.orders.stop();
     this.listing.stop();
     this.strip?.unmount();
     this.strip = null;

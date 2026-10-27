@@ -101,15 +101,27 @@ describe.skipIf(!TEST_DB_URL)("Edge Function handlers on PostgreSQL", () => {
     it("rejects invalid fields with a per-field Hebrew message and stores nothing", async () => {
       const res = await submit("alice", reviewBody("w817260002", { rating: 9, body: "קצר", answers: {}, purchaseMonth: null }));
       expect(res.status).toBe(422);
-      expect(res.body).toMatchObject({ errors: { rating: expect.any(String), body: expect.stringContaining("קצרה מדי"), fit: "בחרו איך המידה.", purchaseMonth: "בחרו את חודש הרכישה." } });
+      expect(res.body).toMatchObject({ errors: { rating: expect.any(String), body: expect.stringContaining("קצרה מדי") } });
+      const errors = (res.body as { errors: Record<string, string> }).errors;
+      expect(errors.purchaseMonth).toBeUndefined();
+      expect(errors.fit).toBeUndefined(); // the category questions are optional
       expect(await db.raw`select 1 from public.reviews`).toHaveLength(0);
       expect(await db.raw`select 1 from public.products`).toHaveLength(0);
     });
 
-    it("uses the site's product type, not the client's, to decide which answers are required", async () => {
-      // The body claims "general" (no fit question); the site says apparel, so fit is required.
-      const res = await submit("alice", reviewBody("w817260002", { answers: {} }));
-      expect(res.body).toMatchObject({ errors: { fit: "בחרו איך המידה." } });
+    it("accepts a review with no category answers and no purchase month", async () => {
+      expect((await submit("alice", reviewBody("w817260002", { answers: {}, purchaseMonth: null }))).status).toBe(200);
+    });
+
+    it("uses the site's product type, not the client's, to decide which answers a store marks as required", async () => {
+      // A store can still mark a question required (data, not code). The body claims "general"; the site says apparel.
+      await db.raw`update public.category_questions set required = true where product_type = 'apparel' and question_key = 'fit'`;
+      try {
+        const res = await submit("alice", reviewBody("w817260002", { answers: {} }));
+        expect(res.body).toMatchObject({ errors: { fit: "בחרו איך המידה." } });
+      } finally {
+        await db.raw`update public.category_questions set required = false`;
+      }
     });
 
     it("refuses to guess when the store has no rules yet", async () => {
@@ -214,6 +226,27 @@ describe.skipIf(!TEST_DB_URL)("Edge Function handlers on PostgreSQL", () => {
       expect(o!.order_hash).toMatch(/^[0-9a-f]{64}$/);
       const everything = JSON.stringify(await db.raw`select * from public.orders`) + JSON.stringify(await db.raw`select * from public.order_items`);
       expect(everything).not.toContain("424242");
+    });
+
+    it("accepts the store's order list without a delivery date: a week after the order is assumed and marked as an estimate", async () => {
+      await db.raw`update public.profiles set order_check_consent = true where id = ${USERS.alice}`;
+      const orders = [{
+        orderNumber: "TX-2001", orderedAt: "2026-10-01", deliveredAt: null,
+        items: [{ sku: "w817260002", name: "מכנסי בדיקה מהרשימה", url: "https://www.terminalx.com/product/W817260002", imageUrl: "https://media.terminalx.com/pub/media/catalog/product/w/8/w817260002-1.jpg" },
+                { sku: "w900010001", name: "מעיל", url: "https://evil.example/steal", imageUrl: "https://evil.example/x.jpg" }],
+      }];
+      expect((await verifyOrders(ctxFor(db, "alice"), { siteId: "terminalx", orders })).body).toMatchObject({ accepted: 1 });
+      const [o] = await db.raw`select ordered_at::text, delivered_at::text, delivery_estimated from public.orders`;
+      expect(o).toMatchObject({ ordered_at: "2026-10-01", delivered_at: "2026-10-08", delivery_estimated: true });
+      const products = await db.raw`select parent_sku, name, url, image_url from public.products order by parent_sku`;
+      expect(products).toEqual([
+        { parent_sku: "w81726", name: "מכנסי בדיקה מהרשימה", url: "https://www.terminalx.com/product/W817260002", image_url: "https://media.terminalx.com/pub/media/catalog/product/w/8/w817260002-1.jpg" },
+        { parent_sku: "w90001", name: "מעיל", url: null, image_url: null },
+      ]);
+      // A week has passed, so the purchase is already waiting for a review.
+      expect(await db.raw`select 1 from public.pending_reviews`).toHaveLength(2);
+      const res = await submit("alice", reviewBody("w817260002", { purchaseMonth: null }));
+      expect(res).toMatchObject({ status: 200, body: { verification: "verified" } });
     });
 
     it("adds the product to the waiting list 14 days after delivery when there is no review", async () => {

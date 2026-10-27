@@ -18,6 +18,11 @@
 
 הטוקן והמפתחות נשארים ב-Secrets של GitHub ולא נכנסים לקוד. אחרי ההרצה אפשר למחוק את הטוקן ב-Supabase.
 
+## עדכון פרויקט קיים (אחרי שינויים בקוד)
+כשמתעדכנת גרסה שיש בה מיגרציה חדשה, צריך גם לעדכן את המסד:
+1. ב-SQL Editor של הפרויקט להדביק ולהריץ את הקובץ של המיגרציה החדשה לבדה (למשל `supabase/migrations/0006_optional_answers.sql`, פעם אחת).
+2. ב-GitHub Actions להריץ **Trial build and deploy** עם פריסת פונקציות ובניית תוסף, ולטעון את התוסף החדש.
+
 ## מה צריך
 - Node 22 ו-pnpm (`corepack enable`), כרום.
 - חשבון Supabase (שכבה חינמית מספיקה) ו-[Supabase CLI](https://supabase.com/docs/guides/cli).

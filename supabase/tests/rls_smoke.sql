@@ -185,10 +185,7 @@ end $$;
 do $$
 declare alice constant uuid := 'a0000000-0000-0000-0000-000000000001';
 begin
-  begin
-    insert into public.reviews (user_id, product_id, rating, body, verification) values (alice, 4, 5, repeat('x', 40), 'unverified');
-    assert false, 'unverified review text requires a purchase month';
-  exception when check_violation then null; end;
+  -- The purchase month is optional (0006): an unverified review with text and no month is valid, so nothing to refuse here.
   begin
     insert into public.reviews (user_id, product_id, rating, body, purchase_month) values (alice, 4, 5, repeat('x', 40), '2026-09-15');
     assert false, 'purchase_month must be the first day of a month';

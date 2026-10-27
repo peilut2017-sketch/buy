@@ -165,3 +165,34 @@ function decodeBody(source: string): string {
   }
   return body;
 }
+
+describe("my-orders response (sanitized real response, 4 of 25 orders)", () => {
+  const json = JSON.parse(readFileSync(resolve(dir, "orders-list-response-sanitized.json"), "utf8"));
+
+  it("gives each purchase's SKU from the picture, the order day in Israel, and the title", () => {
+    const orders = terminalxAdapter.parseOrdersResponse!(json, cfg)!;
+    // The second order was refunded and is left out.
+    expect(orders).toHaveLength(3);
+    expect(orders[0]).toMatchObject({ orderNumber: "0XXXXXXXX", orderedAt: "2026-10-18", deliveredAt: null });
+    expect(orders[0]!.items.map((i) => i.sku)).toEqual(["k126100017", "r868090001", "k111020001"]);
+    expect(orders[0]!.items[0]).toMatchObject({
+      name: "שמלת מידי בשילוב קפלים וחגורה",
+      url: "https://www.terminalx.com/product/K126100017",
+      imageUrl: "https://media.terminalx.com/pub/media/catalog/product/k/1/k126100017-11791442206.jpg",
+    });
+    // The 2024 jewellery order: page SKUs end in 968 and 913 and are still ten characters.
+    expect(orders[2]!.items.map((i) => i.sku)).toEqual(["w420560968", "w593142913"]);
+  });
+
+  it("matches the model SKU of the product pages (first six characters)", () => {
+    const orders = terminalxAdapter.parseOrdersResponse!(json, cfg)!;
+    const models = orders[0]!.items.map((i) => new RegExp(cfg.parentSku.fromSku, "i").exec(i.sku)![1]);
+    expect(models).toEqual(["k12610", "r86809", "k11102"]);
+  });
+
+  it("returns null for any other response", () => {
+    expect(terminalxAdapter.parseOrdersResponse!({ data: { something: 1 } }, cfg)).toBeNull();
+    expect(terminalxAdapter.parseOrdersResponse!(null, cfg)).toBeNull();
+    expect(terminalxAdapter.parseOrdersResponse!({ data: { customerOrders: { items: [] } } }, cfg)).toEqual([]);
+  });
+});

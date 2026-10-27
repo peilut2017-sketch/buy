@@ -55,6 +55,11 @@ export interface ListingCard {
 export interface OrderItem {
   sku: string;
   variant?: VariantValues;
+  /** The item's title as the store's order list shows it. Only used to name a product we have not seen before. */
+  name?: string;
+  /** The product page and picture, when the order list gives enough to build them. */
+  url?: string;
+  imageUrl?: string;
 }
 
 export interface Order {
@@ -153,6 +158,11 @@ export interface SiteAdapter {
   readListingCards?(doc: Document, cfg: AdapterConfig): ListingCard[];
   /** Runs in the background worker with the user's cookies, after consent, at most daily. */
   fetchOrders?(cfg: AdapterConfig): Promise<Order[]>;
+  /**
+   * Reads the store's own "my orders" response, which the page loads for the signed-in person. Returns null when the
+   * response is something else. Orders that were refunded or cancelled are left out.
+   */
+  parseOrdersResponse?(json: unknown, cfg: AdapterConfig): Order[] | null;
   /** Runs in the Email Worker after DKIM passes. */
   parseConfirmationEmail?(raw: { from: string; subject: string; text: string; html: string | null; /** The Date header, as sent. */ date?: string | null }): Order | null;
 }

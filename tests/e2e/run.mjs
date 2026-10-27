@@ -372,7 +372,9 @@ await check("the review form validates every field and keeps what was typed", as
   await shot(panel, "panel-write-empty", { fullPage: true });
   await panel.getByRole("button", { name: "פרסום ביקורת" }).click();
   const text = await panel.locator("body").innerText();
-  for (const e of ["בחרו דירוג בין 1 ל-5 כוכבים.", "בחרו איך המידה.", "בחרו את חודש הרכישה.", "כתבו כמה מילים על המוצר."]) assert.ok(text.includes(e), `missing error "${e}"`);
+  for (const e of ["בחרו דירוג בין 1 ל-5 כוכבים.", "כתבו כמה מילים על המוצר."]) assert.ok(text.includes(e), `missing error "${e}"`);
+  // Only the stars, the text and the product's own details are required: fit and purchase month are optional.
+  for (const e of ["בחרו איך המידה.", "בחרו את חודש הרכישה."]) assert.ok(!text.includes(e), `must not be required: "${e}"`);
   assert.equal(await panel.locator("[aria-invalid=true]").count() > 0, true);
   await shot(panel, "panel-write-errors", { fullPage: true });
   await panel.getByRole("group", { name: "דירוג כללי" }).getByLabel("4 כוכבים").check({ force: true });
@@ -675,6 +677,45 @@ await check("a category page gets a small rating on products with reviews only, 
   await back.close();
 });
 
+console.log("\nMy orders page");
+
+await check("the orders page shows what was read, asks for the one-click consent, and sends only orders, SKUs and dates", async () => {
+  mock.state.orderConsent = false;
+  mock.state.verifiedOrders = [];
+  const page = await context.newPage();
+  await page.goto("https://www.terminalx.com/sales/order/history");
+  const notice = () => page.locator("smartbuy-orders");
+  const noticeText = () => page.evaluate(() => document.querySelector("smartbuy-orders")?.shadowRoot?.textContent ?? "");
+  await notice().getByRole("button", { name: "אישור בדיקת הזמנות" }).waitFor({ timeout: 10000 });
+  assert.ok((await noticeText()).includes("ראה 3 הזמנות"), await noticeText());
+  assert.equal(mock.state.verifiedOrders.length, 0, "nothing is sent before the person agrees");
+  await shot(page, "orders-consent");
+  const violations = await runAxe(page, "orders-notice", "smartbuy-orders");
+  assert.deepEqual(violations, [], JSON.stringify(violations));
+
+  await notice().getByRole("button", { name: "אישור בדיקת הזמנות" }).click();
+  await page.waitForFunction(() => document.querySelector("smartbuy-orders")?.shadowRoot?.textContent?.includes("קרא 3 הזמנות"), null, { timeout: 10000 });
+  assert.equal(mock.state.orderConsent, true);
+  const text = await noticeText();
+  assert.ok(text.includes("3 הזמנות חדשות נשמרו"), text);
+  assert.equal(mock.state.verifiedOrders.length, 3);
+  const first = mock.state.verifiedOrders[0];
+  assert.deepEqual(first.items.map((i) => i.sku), ["k126100017", "r868090001", "k111020001"]);
+  assert.equal(first.orderedAt, "2026-10-18");
+  assert.equal(first.deliveredAt, null);
+  assert.ok(!JSON.stringify(first).includes("customer_full_name"), "no personal field may be sent");
+  await shot(page, "orders-read");
+  await page.close();
+
+  // With consent given, the next visit saves at once.
+  mock.state.verifiedOrders = [];
+  const again = await context.newPage();
+  await again.goto("https://www.terminalx.com/sales/order/history");
+  await again.waitForFunction(() => document.querySelector("smartbuy-orders")?.shadowRoot?.textContent?.includes("קרא 3 הזמנות"), null, { timeout: 10000 });
+  assert.equal(mock.state.verifiedOrders.length, 3);
+  await again.close();
+});
+
 console.log("\nPopup, settings and welcome");
 
 await check("popup (signed in) shows the empty waiting list and the quiet-mode switch", async () => {
@@ -689,6 +730,31 @@ await check("popup (signed in) shows the empty waiting list and the quiet-mode s
   await shot(page, "popup-signed-in");
   const violations = await runAxe(page, "popup");
   assert.deepEqual(violations, [], JSON.stringify(violations));
+  await page.close();
+});
+
+await check("the popup lists purchases that have no review yet, and says when the orders page was last read", async () => {
+  const product = (id, name, sku) => ({ id, name, url: `https://www.terminalx.com/product/${sku}`, image_url: null, site_id: "terminalx", parent_sku: sku.slice(0, 6).toLowerCase() });
+  mock.state.purchases = [
+    { id: 1, product_id: 1, products: product(1, "מכנסי בדיקה שכבר יש עליהם ביקורת", "W817260002"), orders: { ordered_at: "2026-10-18" } },
+    { id: 2, product_id: 5, products: product(5, "שמלה לבדיקה", "K126100017"), orders: { ordered_at: "2026-10-18" } },
+    { id: 3, product_id: 5, products: product(5, "שמלה לבדיקה", "K126100017"), orders: { ordered_at: "2026-09-01" } },
+  ];
+  const page = await context.newPage();
+  await page.setViewportSize({ width: 360, height: 640 });
+  await page.goto(env.extUrl("popup.html"));
+  await page.getByRole("heading", { name: "רכישות שעוד אין עליהן ביקורת" }).waitFor();
+  const list = page.getByRole("list", { name: "רכישות בלי ביקורת" });
+  await list.waitFor();
+  const text = await list.innerText();
+  assert.ok(text.includes("שמלה לבדיקה") && text.includes("הוזמן ב-18.10.2026"), text);
+  assert.ok(!text.includes("שכבר יש עליהם ביקורת"), "a reviewed product must not be listed");
+  assert.equal(await list.locator("li").count(), 1, "one row per product");
+  assert.ok((await page.locator("body").innerText()).includes("עמוד ההזמנות נקרא"), "the last read must be shown after the orders page was read");
+  await shot(page, "popup-purchases");
+  const violations = await runAxe(page, "popup-purchases");
+  assert.deepEqual(violations, [], JSON.stringify(violations));
+  mock.state.purchases = [];
   await page.close();
 });
 

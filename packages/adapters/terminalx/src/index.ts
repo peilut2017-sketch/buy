@@ -81,6 +81,53 @@ export function parseConfirmationEmail(raw: { from: string; subject: string; tex
   return { orderNumber, orderedAt: sent && !Number.isNaN(sent.getTime()) ? sent.toISOString().slice(0, 10) : null, deliveredAt: null, items };
 }
 
+const NOT_PURCHASES = new Set(["refunded", "canceled", "cancelled", "closed"]);
+const IMAGE_BASE = "https://media.terminalx.com/pub/media/catalog/product";
+
+/** The calendar day in Israel, so an order placed at 23:30 local time is not filed under the next day (the store sends UTC). */
+function israelDay(iso: string): string | null {
+  const t = new Date(iso);
+  if (Number.isNaN(t.getTime())) return null;
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Jerusalem", year: "numeric", month: "2-digit", day: "2-digit" }).format(t);
+}
+
+/**
+ * The "my orders" list (data.customerOrders). It has no SKUs, sizes or delivery dates, but each item's picture path
+ * carries the product's SKU (k126100017-....jpg), which is the page SKU. Colour and size are therefore not known here.
+ */
+export function parseOrdersResponse(json: unknown, cfg: AdapterConfig): Order[] | null {
+  const items = (json as { data?: { customerOrders?: { items?: unknown } } } | null)?.data?.customerOrders?.items;
+  if (!Array.isArray(items)) return null;
+  const out: Order[] = [];
+  for (const raw of items) {
+    if (typeof raw !== "object" || raw === null) continue;
+    const o = raw as Record<string, unknown>;
+    const number = typeof o.order_number === "string" ? o.order_number.trim() : "";
+    if (!number || NOT_PURCHASES.has(String(o.status ?? "").toLowerCase())) continue;
+    const gallery = Array.isArray(o.items_gallery) ? o.items_gallery : [];
+    const titles = Array.isArray(o.items_titles) ? o.items_titles : [];
+    const seen = new Set<string>();
+    const orderItems: OrderItem[] = [];
+    gallery.forEach((path, i) => {
+      if (typeof path !== "string") return;
+      const sku = /\/([a-z]\d{5}(?:\d{4})?)-\d+\.(?:jpe?g|png|webp)/i.exec(path)?.[1]?.toLowerCase();
+      if (!sku || seen.has(sku)) return;
+      seen.add(sku);
+      const title = typeof titles[i] === "string" ? (titles[i] as string).replace(/\s+/g, " ").trim().slice(0, 200) : "";
+      orderItems.push({
+        sku,
+        ...(title ? { name: title } : {}),
+        ...(cfg.pageUrl ? { url: cfg.pageUrl.replace("{sku}", sku.toUpperCase()) } : {}),
+        imageUrl: `${IMAGE_BASE}${path.split("?")[0]}`,
+      });
+    });
+    if (orderItems.length === 0) continue;
+    const iso = typeof o.created_at_iso === "string" ? o.created_at_iso : null;
+    out.push({ orderNumber: number, orderedAt: iso ? israelDay(iso) : null, deliveredAt: null, items: orderItems });
+  }
+  return out;
+}
+
 export const terminalxAdapter: SiteAdapter = {
   id: SITE_ID,
   matchesUrl: (url) => DOMAINS.includes(url.hostname),
@@ -90,4 +137,5 @@ export const terminalxAdapter: SiteAdapter = {
   readPriceStock: readPriceStockWithConfig,
   readListingCards: readListingCardsWithConfig,
   parseConfirmationEmail,
+  parseOrdersResponse,
 };

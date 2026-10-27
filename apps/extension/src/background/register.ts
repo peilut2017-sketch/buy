@@ -6,7 +6,10 @@ import { SITES } from "../lib/sites.ts";
 import { loadSiteConfig } from "./config.ts";
 
 export const CONTENT_SCRIPT_FILE = "/content-scripts/content.js";
+/** Runs in the page's own world to hand over the "my orders" answer the page loads. See entrypoints/orders-hook.content.ts. */
+export const ORDERS_HOOK_FILE = "/content-scripts/orders-hook.js";
 const idOf = (siteId: string) => `sb-${siteId}`;
+const hookIdOf = (siteId: string) => `sb-${siteId}-orders`;
 
 export async function syncContentScripts(): Promise<string[]> {
   const registered = new Set((await browser.scripting.getRegisteredContentScripts()).map((s) => s.id));
@@ -24,8 +27,14 @@ export async function syncContentScripts(): Promise<string[]> {
       ]);
       await injectIntoOpenTabs(site.contentMatches);
     }
-    if (!wanted && registered.has(id)) {
-      await browser.scripting.unregisterContentScripts({ ids: [id] });
+    if (wanted && !registered.has(hookIdOf(site.id))) {
+      await browser.scripting.registerContentScripts([
+        { id: hookIdOf(site.id), matches: site.contentMatches, js: [ORDERS_HOOK_FILE], runAt: "document_start", world: "MAIN", persistAcrossSessions: true },
+      ]);
+    }
+    if (!wanted) {
+      const stale = [id, hookIdOf(site.id)].filter((x) => registered.has(x));
+      if (stale.length > 0) await browser.scripting.unregisterContentScripts({ ids: stale });
     }
     if (wanted) active.push(site.id);
   }

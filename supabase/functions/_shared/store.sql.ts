@@ -314,8 +314,8 @@ export function createStore(sql: Sql, options: StoreOptions): Store {
     async insertOrder(o: OrderToStore) {
       return await sql.begin(async (tx) => {
         const [order] = await tx`
-          insert into public.orders (user_id, site_id, order_hash, ordered_at, delivered_at, source)
-          values (${o.userId}, ${o.siteId}, ${o.orderHash}, ${o.orderedAt}::date, ${o.deliveredAt}::date, ${o.source}) returning id`;
+          insert into public.orders (user_id, site_id, order_hash, ordered_at, delivered_at, delivery_estimated, source)
+          values (${o.userId}, ${o.siteId}, ${o.orderHash}, ${o.orderedAt}::date, ${o.deliveredAt}::date, ${o.deliveryEstimated ?? false}, ${o.source}) returning id`;
         const itemIds: number[] = [];
         for (const item of o.items) {
           const [row] = await tx`insert into public.order_items (order_id, product_id, variant_id, sku) values (${order!.id}, ${item.productId}, ${item.variantId}, ${item.sku}) returning id`;

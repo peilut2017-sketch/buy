@@ -4,6 +4,7 @@ import { useEffect, useState } from "preact/hooks";
 import { currentIdentity, useSession } from "../lib/auth.ts";
 import { BACKEND_CONFIGURED } from "../lib/env.ts";
 import { siteById } from "../lib/sites.ts";
+import { removeSession } from "../lib/storage.ts";
 import { NotDetected } from "./NotDetected.tsx";
 import { toTarget, type ProductRef } from "./target.ts";
 import { useActiveTab } from "./useActiveTab.ts";
@@ -60,7 +61,11 @@ export function App() {
 
   const backToList = (reload = false) => {
     setView({ name: "list" });
-    if (reload) setVersion((v) => v + 1);
+    if (reload) {
+      setVersion((v) => v + 1);
+      // The strip keeps a short-lived copy of the summary; a saved review must show there on the next look.
+      if (product) void removeSession(`summary:${product.siteId}:${product.parentSku}`).catch(() => undefined);
+    }
   };
 
   let content;

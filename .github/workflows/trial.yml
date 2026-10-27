@@ -3,6 +3,10 @@
 name: Trial build and deploy
 
 on:
+  # Every change to the product's code on this branch is deployed and built by itself.
+  push:
+    branches: [claude/build-phase-1]
+    paths: ["supabase/**", "packages/**", "apps/extension/**", "scripts/**", "pnpm-lock.yaml", ".github/workflows/trial.yml"]
   workflow_dispatch:
     inputs:
       deploy_functions:
@@ -18,15 +22,26 @@ on:
         type: boolean
         default: false
 
+concurrency:
+  group: trial-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   functions:
-    if: ${{ inputs.deploy_functions }}
+    if: ${{ github.event_name == 'push' || inputs.deploy_functions }}
     runs-on: ubuntu-latest
     env:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
       - uses: supabase/setup-cli@v1
         with:
           version: latest
@@ -34,11 +49,13 @@ jobs:
         run: |
           test -n "$SUPABASE_ACCESS_TOKEN" || { echo "Missing secret SUPABASE_ACCESS_TOKEN"; exit 1; }
           test -n "$SUPABASE_PROJECT_REF" || { echo "Missing secret SUPABASE_PROJECT_REF"; exit 1; }
+      - name: Apply new database migrations (only when the SUPABASE_DB_URL secret exists)
+        run: node scripts/apply-migrations.mjs
       - name: Deploy every function
         run: scripts/deploy-functions.sh
 
   extension:
-    if: ${{ inputs.build_extension }}
+    if: ${{ github.event_name == 'push' || inputs.build_extension }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -48,19 +65,39 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - name: Check the secrets are set
+      - name: Write the extension settings
         env:
           URL: ${{ secrets.SUPABASE_URL }}
           KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          PASSWORD_LOGIN: ${{ (inputs.password_login || vars.TRIAL_PASSWORD_LOGIN == '1') && '1' || '' }}
         run: |
+          # Whitespace or a stray newline pasted with a secret would silently break the build, so it is removed.
+          URL="$(printf '%s' "$URL" | tr -d '[:space:]')"
+          KEY="$(printf '%s' "$KEY" | tr -d '[:space:]')"
           test -n "$URL" || { echo "Missing secret SUPABASE_URL"; exit 1; }
           test -n "$KEY" || { echo "Missing secret SUPABASE_ANON_KEY"; exit 1; }
+          case "$URL" in https://*) ;; *) echo "SUPABASE_URL must start with https://"; exit 1;; esac
+          {
+            printf 'WXT_SUPABASE_URL=%s\n' "$URL"
+            printf 'WXT_SUPABASE_ANON_KEY=%s\n' "$KEY"
+            printf 'WXT_TRIAL_PASSWORD_LOGIN=%s\n' "$PASSWORD_LOGIN"
+          } > apps/extension/.env
+          echo "URL length: ${#URL}, key length: ${#KEY}, password login: ${PASSWORD_LOGIN:-off}"
       - name: Build
         env:
-          WXT_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          WXT_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
-          WXT_TRIAL_PASSWORD_LOGIN: ${{ inputs.password_login && '1' || '' }}
-        run: pnpm build:ext
+          SB_BUILD_LABEL: ${{ github.sha }}
+        run: |
+          export SB_BUILD_LABEL="${SB_BUILD_LABEL:0:7}"
+          pnpm build:ext
+      - name: Verify the settings are inside the build
+        env:
+          URL: ${{ secrets.SUPABASE_URL }}
+        run: |
+          URL="$(printf '%s' "$URL" | tr -d '[:space:]')"
+          HOST="${URL#https://}"
+          N="$(grep -rl --fixed-strings "$HOST" apps/extension/.output/chrome-mv3 | wc -l)"
+          echo "Files containing the server address: $N"
+          test "$N" -gt 0 || { echo "The server address did not end up in the build"; exit 1; }
       - run: pnpm check:manifest
       - uses: actions/upload-artifact@v4
         with:

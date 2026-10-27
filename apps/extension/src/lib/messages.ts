@@ -1,7 +1,7 @@
 // Typed messages between the content script, the background worker and the extension pages.
 
 import { browser } from "wxt/browser";
-import type { AdapterConfig, Confidence, PriceSnapshot, ProductSummary, SiteStatus, VariantOption } from "@smartbuy/core";
+import type { AdapterConfig, Confidence, Order, PriceSnapshot, ProductSummary, SiteStatus, VariantOption } from "@smartbuy/core";
 
 export interface ProductSnapshot {
   siteId: string;
@@ -29,6 +29,11 @@ export interface SiteConfigResult {
   source: "remote" | "cache" | "bundled";
 }
 
+/** What happened to the orders the page showed: the toast on the orders page tells the person in plain words. */
+export type OrdersOutcome =
+  | { status: "ok"; sent: number; accepted: number; alreadyKnown: number; conflicts: number }
+  | { status: "signed-out" | "no-consent" | "terms" | "error" };
+
 export type PanelMode = "reviews" | "write" | "tracking";
 
 export interface DetectFailure {
@@ -48,6 +53,9 @@ interface Requests {
   "price-info": { req: { siteId: string; parentSku: string; sku: string }; res: { lowest: { price: number; since: string } | null } };
   "size-advice": { req: { siteId: string; parentSku: string; productType: string; brand: string | null }; res: { advice: { headline: string; support: string } | null } };
   "listing-summaries": { req: { siteId: string; parentSkus: string[] }; res: { summaries: { parentSku: string; reviewsCount: number; ratingAvg: number }[] } };
+  "orders-captured": { req: { siteId: string; orders: Order[] }; res: OrdersOutcome };
+  "enable-order-check": { req: { siteId: string; orders: Order[] }; res: OrdersOutcome };
+  "open-options": { req: Record<string, never>; res: { ok: true } };
   "tab-product": { req: { tabId: number }; res: { product: ProductSnapshot | null; mode: PanelMode | null } };
   "detect-failed": { req: { failure: DetectFailure }; res: { ok: true } };
   "sync-content-scripts": { req: Record<string, never>; res: { registered: string[] } };

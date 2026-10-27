@@ -410,3 +410,67 @@ export async function getListingSummaries(siteId: string, parentSkus: readonly s
 export function acceptTerms(token: string, version: string): Promise<{ version: string }> {
   return callFunction<{ version: string }>("accept-terms", { version }, token);
 }
+
+/* ---------------------------------------------------------------- orders */
+
+export interface OrderPayload {
+  orderNumber: string;
+  orderedAt: string | null;
+  deliveredAt: string | null;
+  items: { sku: string; name?: string; url?: string; imageUrl?: string }[];
+}
+
+export interface VerifyOrdersResult {
+  accepted: number;
+  alreadyKnown: number;
+  conflicts: number;
+  rejected: number;
+  upgraded: number;
+}
+
+/** Sends orders the person's own browser read from the store's "my orders" page. The server stores a hash of the number, never the number. */
+export function verifyOrders(token: string, siteId: string, orders: OrderPayload[]): Promise<VerifyOrdersResult> {
+  return callFunction<VerifyOrdersResult>("verify-orders", { siteId, orders }, token);
+}
+
+export interface Purchase {
+  productId: number;
+  siteId: string;
+  parentSku: string;
+  name: string | null;
+  url: string | null;
+  imageUrl: string | null;
+  /** The latest order of this product. */
+  orderedAt: string | null;
+}
+
+interface PurchaseRow {
+  id: number;
+  product_id: number | null;
+  products: { id: number; name: string | null; url: string | null; image_url: string | null; site_id: string; parent_sku: string } | null;
+  orders: { ordered_at: string | null } | null;
+}
+
+/**
+ * What the person bought (from the orders their browser read) and has not reviewed yet, newest first, one row per product.
+ * "Reviewed" means a review with text exists: a rating alone is not published, so it does not count.
+ */
+export async function listPurchases(token: string, userId: string): Promise<Purchase[]> {
+  const [rows, reviewed] = await Promise.all([
+    rest<PurchaseRow[]>("order_items", {
+      params: { select: "id,product_id,products(id,name,url,image_url,site_id,parent_sku),orders(ordered_at)", order: "id.desc", limit: 200 },
+      token,
+    }),
+    rest<{ product_id: number }[]>("reviews", { params: { user_id: `eq.${userId}`, body: "not.is.null", select: "product_id" }, token }),
+  ]);
+  const done = new Set(reviewed.map((r) => Number(r.product_id)));
+  const seen = new Set<number>();
+  const out: Purchase[] = [];
+  for (const r of rows) {
+    const p = r.products;
+    if (!p || r.product_id === null || done.has(Number(p.id)) || seen.has(Number(p.id))) continue;
+    seen.add(Number(p.id));
+    out.push({ productId: Number(p.id), siteId: p.site_id, parentSku: p.parent_sku, name: p.name, url: p.url, imageUrl: p.image_url, orderedAt: r.orders?.ordered_at ?? null });
+  }
+  return out;
+}

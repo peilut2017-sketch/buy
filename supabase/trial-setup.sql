@@ -1111,6 +1111,30 @@ create policy "helpful vote" on public.helpful_votes for insert to authenticated
                   and r.status = 'visible' and r.body is not null));
 
 
+-- ===== 0006_optional_answers.sql =====
+-- A review needs the product's details (colour, size, as the store lists them), stars and text. The category questions
+-- (fit, photo match, value, recommend, usual size) are optional: people answer them when they want to.
+update public.category_questions set required = false where required;
+
+-- The purchase month is optional too. The constraint that demanded it for every unverified published review goes.
+-- (Its name is generated, so it is found by what it checks.)
+do $$
+declare c text;
+begin
+  for c in
+    select conname from pg_constraint
+    where conrelid = 'public.reviews'::regclass and contype = 'c'
+      and pg_get_constraintdef(oid) ilike '%purchase_month IS NOT NULL%' and pg_get_constraintdef(oid) ilike '%verified%'
+      and pg_get_constraintdef(oid) ilike '%body IS NULL%'
+  loop
+    execute format('alter table public.reviews drop constraint %I', c);
+  end loop;
+end $$;
+
+-- The store's order list has no delivery date. An assumed one (a week after the order) is marked as such.
+alter table public.orders add column delivery_estimated boolean not null default false;
+
+
 -- ===== Terminal X rules (from packages/adapters/terminalx/config.json) =====
 update public.sites set adapter_config = '{"productUrl":"^/(?:[^/]+/)*([a-z]\\d{5}(?:\\d{4})?)/?$","signals":{"canonical":{"selector":"link[rel=''canonical'']","attr":"href","skuRegex":"/([a-z]\\d{5}(?:\\d{4})?)/?(?:[?#].*)?$"},"image":{"selector":"meta[property=''og:image'']","attr":"content","skuRegex":"/([a-z]\\d{9})-\\d+\\.(?:jpe?g|png|webp)"},"jsonLd":{"type":"Product","skuPath":"sku","skuRegex":"^([a-z]\\d{5}(?:\\d{4})?)$"}},"parentSku":{"fromSku":"^([a-z]\\d{5})"},"variants":{"groups":"[class*=''attribute-wrapper'']","label":"[class*=''label-wrapper''] > span:first-child, [class*=''right-side'']","option":"[data-test-id^=''qa-size-item''], [data-test-id^=''qa-color-item'']","selected":"[class*=''is-selected''], [class*='' selected_'']","unavailable":"[class*=''out-of-stock''], [data-test-id$=''-not-available'']"},"price":{"selector":"[data-test-id=''qa-pdp-price-final'']","regularSelector":"[data-test-id=''qa-pdp-price-regular'']","currency":"ILS"},"listing":{"card":"li[class*=''listing-product'']","link":"a[data-test-id=''qa-product-link'']"},"emailDomains":["terminalx.com"],"productType":"apparel","sizeGroup":"מידה","colorGroup":"צבע","pageUrl":"https://www.terminalx.com/product/{sku}"}'::jsonb where id = 'terminalx';
 

@@ -4,7 +4,7 @@ import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 import { ANON_KEY, ME, startMock } from "./mock-supabase.mjs";
-import { listingPage, plainPage, productPage } from "./pages/product.mjs";
+import { listingPage, ordersPage, plainPage, productPage } from "./pages/product.mjs";
 
 const require = createRequire(import.meta.url);
 const { chromium } = require("playwright");
@@ -20,6 +20,7 @@ const PICTURE = `<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200
 function pageFor(url) {
   const sku = url.pathname.slice(1);
   if (url.pathname === "/category/women") return listingPage();
+  if (url.pathname === "/sales/order/history") return ordersPage();
   if (!/^[a-z]\d{9}$/.test(sku)) return plainPage();
   const q = url.searchParams;
   return productPage({
@@ -45,6 +46,12 @@ export async function launch() {
 
   await context.route("https://www.terminalx.com/**", (route) => {
     const url = new URL(route.request().url());
+    if (url.pathname === "/pg/QueryCustomerOrders") {
+      // The sanitized real response, with a distinct order number per order (the sanitizing made them all alike).
+      const data = JSON.parse(readFileSync(resolve(root, "tests/fixtures/terminalx/orders-list-response-sanitized.json"), "utf8"));
+      data.data.customerOrders.items.forEach((o, i) => (o.order_number = `0TEST000${i}`));
+      return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(data) });
+    }
     return route.fulfill({ status: 200, contentType: "text/html; charset=utf-8", body: pageFor(url) });
   });
   await context.route("https://media.terminalx.com/**", (route) => route.fulfill({ status: 200, contentType: "image/svg+xml", body: PICTURE }));

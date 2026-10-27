@@ -2,8 +2,9 @@
 # Deploys every Edge Function in supabase/functions to the linked Supabase project.
 # Prerequisites: `supabase login` and `supabase link --project-ref <ref>` (see docs/11-trial-run.md).
 set -euo pipefail
-cd "$(dirname "$0")/../supabase"
-for dir in functions/*/; do
+# The CLI looks for supabase/functions relative to the repository root.
+cd "$(dirname "$0")/.."
+for dir in supabase/functions/*/; do
   name="$(basename "$dir")"
   [ "$name" = "_shared" ] && continue
   flags=()

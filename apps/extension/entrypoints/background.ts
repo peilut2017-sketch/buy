@@ -7,15 +7,40 @@ import { FLUSH_ALARM, flushPrices, queuePrice } from "../src/background/prices.t
 import { POLL_ALARM, pollAndShow, registerNotificationClicks } from "../src/background/notifications.ts";
 import { syncContentScripts } from "../src/background/register.ts";
 import { WEBSITE_URL } from "../src/lib/env.ts";
-import type { Message, PanelMode, ProductSnapshot } from "../src/lib/messages.ts";
-import { getListingSummaries, getReviews, getSizeProfile, getSummary, getTracking, pickUsualSize } from "@smartbuy/data";
-import { historyState, lowestInWindow, sizeAdvice } from "@smartbuy/core";
+import type { Message, OrdersOutcome, PanelMode, ProductSnapshot } from "../src/lib/messages.ts";
+import { ApiError, getListingSummaries, getProfile, getReviews, getSizeProfile, getSummary, getTracking, pickUsualSize, setProfileFlag, verifyOrders } from "@smartbuy/data";
+import { historyState, lowestInWindow, sizeAdvice, type Order } from "@smartbuy/core";
 import { currentIdentity } from "../src/lib/auth.ts";
-import { getSession, removeSession, setSession } from "../src/lib/storage.ts";
+import { getSession, removeSession, setLocal, setSession } from "../src/lib/storage.ts";
 import { siteById } from "../src/lib/sites.ts";
 import type { ProductSummary } from "@smartbuy/core";
 
+/** Saves what the orders page showed. Each step can say why it stopped, so the notice on the page can tell the person. */
+async function saveOrders(siteId: string, orders: Order[]): Promise<OrdersOutcome> {
+  const identity = await currentIdentity().catch(() => null);
+  if (!identity) return { status: "signed-out" };
+  try {
+    const profile = await getProfile(identity.token, identity.userId);
+    if (!profile?.orderCheckConsent) return { status: "no-consent" };
+    const total = { status: "ok" as const, sent: orders.length, accepted: 0, alreadyKnown: 0, conflicts: 0 };
+    // The server takes at most 50 orders per request.
+    for (let i = 0; i < orders.length; i += 50) {
+      const result = await verifyOrders(identity.token, siteId, orders.slice(i, i + 50));
+      total.accepted += result.accepted;
+      total.alreadyKnown += result.alreadyKnown;
+      total.conflicts += result.conflicts;
+    }
+    await setLocal("ordersStatus", { at: Date.now(), siteId, read: orders.length, accepted: total.accepted });
+    return total;
+  } catch (error) {
+    if (error instanceof ApiError && error.fieldErrors?.terms) return { status: "terms" };
+    return { status: "error" };
+  }
+}
+
 const SUMMARY_TTL_MS = 10 * 60 * 1000;
+/** A product with no reviews yet is looked up again soon, so a first review shows up quickly. */
+const EMPTY_SUMMARY_TTL_MS = 20 * 1000;
 const tabKey = (tabId: number) => `tab:${tabId}`;
 
 interface TabState {
@@ -26,7 +51,7 @@ interface TabState {
 async function readSummary(siteId: string, parentSku: string): Promise<ProductSummary | null> {
   const key = `summary:${siteId}:${parentSku}`;
   const cached = await getSession<{ at: number; summary: ProductSummary | null }>(key);
-  if (cached && Date.now() - cached.at < SUMMARY_TTL_MS) return cached.summary;
+  if (cached && Date.now() - cached.at < (cached.summary === null || cached.summary.reviewsCount === 0 ? EMPTY_SUMMARY_TTL_MS : SUMMARY_TTL_MS)) return cached.summary;
   const summary = await getSummary(siteId, parentSku);
   await setSession(key, { at: Date.now(), summary });
   return summary;
@@ -136,6 +161,32 @@ export default defineBackground(() => {
           () => sendResponse({ summaries: [] }),
         );
         return true;
+      }
+
+      case "orders-captured": {
+        void saveOrders(message.siteId, message.orders).then(sendResponse);
+        return true;
+      }
+
+      case "enable-order-check": {
+        // The person pressed the button on the orders page: that press is the consent.
+        void (async () => {
+          const identity = await currentIdentity().catch(() => null);
+          if (!identity) return sendResponse({ status: "signed-out" } satisfies OrdersOutcome);
+          try {
+            await setProfileFlag(identity.token, identity.userId, { order_check_consent: true });
+          } catch {
+            return sendResponse({ status: "error" } satisfies OrdersOutcome);
+          }
+          sendResponse(await saveOrders(message.siteId, message.orders));
+        })();
+        return true;
+      }
+
+      case "open-options": {
+        void browser.runtime.openOptionsPage();
+        sendResponse({ ok: true });
+        return false;
       }
 
       case "size-advice": {

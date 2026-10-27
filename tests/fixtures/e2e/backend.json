@@ -19,7 +19,7 @@
     { "id": 1, "review_id": 3, "body": "עדכון בדיקה: אחרי חודש הבד עדיין במצב טוב ולא נמתח.", "rating": 4, "created_at": "2026-10-24T09:00:00Z" }
   ],
   "questions": [
-    { "product_type": "apparel", "question_key": "fit", "label": "איך המידה?", "kind": "choice", "options": [{ "value": "small", "label": "קטן" }, { "value": "exact", "label": "מדויק" }, { "value": "large", "label": "גדול" }], "required": true, "sort": 1 },
+    { "product_type": "apparel", "question_key": "fit", "label": "איך המידה?", "kind": "choice", "options": [{ "value": "small", "label": "קטן" }, { "value": "exact", "label": "מדויק" }, { "value": "large", "label": "גדול" }], "required": false, "sort": 1 },
     { "product_type": "apparel", "question_key": "usual_size", "label": "המידה הרגילה שלי", "kind": "size", "options": null, "required": false, "sort": 2 },
     { "product_type": "apparel", "question_key": "matches_photo", "label": "תואם לתמונה?", "kind": "choice", "options": [{ "value": "yes", "label": "כן" }, { "value": "roughly", "label": "בערך" }, { "value": "no", "label": "לא" }], "required": false, "sort": 3 },
     { "product_type": "apparel", "question_key": "value", "label": "איכות ביחס למחיר", "kind": "scale", "options": { "min": 1, "max": 5 }, "required": false, "sort": 4 },
