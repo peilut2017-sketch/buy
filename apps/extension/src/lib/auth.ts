@@ -87,10 +87,13 @@ export async function signInWithGoogle(): Promise<void> {
   if (exchanged.error) throw new AuthError("ההתחברות לא הושלמה. נסו שוב.");
 }
 
+/** In trial builds the server's own words are added, so a failure can be diagnosed from a screenshot. */
+const detail = (error: { status?: number; message?: string }): string => (PASSWORD_LOGIN_ENABLED ? ` (פירוט: ${error.status ?? "?"} ${error.message ?? ""})` : "");
+
 export async function requestEmailCode(email: string): Promise<void> {
   const { error } = await authClient().auth.signInWithOtp({ email: email.trim(), options: { shouldCreateUser: true } });
   if (error) {
-    throw new AuthError(error.status === 429 ? "נשלחו יותר מדי בקשות. נסו שוב בעוד דקה." : "לא הצלחנו לשלוח קוד. בדקו את כתובת המייל ונסו שוב.");
+    throw new AuthError((error.status === 429 ? "נשלחו יותר מדי בקשות. נסו שוב בעוד דקה." : "לא הצלחנו לשלוח קוד. בדקו את כתובת המייל ונסו שוב.") + detail(error));
   }
 }
 
@@ -101,7 +104,7 @@ export async function verifyEmailCode(email: string, code: string): Promise<void
 
 export async function signInWithPassword(email: string, password: string): Promise<void> {
   const { error } = await authClient().auth.signInWithPassword({ email: email.trim(), password });
-  if (error) throw new AuthError("המייל או הסיסמה שגויים.");
+  if (error) throw new AuthError("המייל או הסיסמה שגויים." + detail(error));
 }
 
 export async function signOut(): Promise<void> {
