@@ -1,3 +1,4 @@
+import { browser } from "wxt/browser";
 import { useEffect, useState } from "preact/hooks";
 import { AccountPanel, DataControls, NotificationSettingsPanel, SizeProfilePanel, Root, SignInCard, Skel, Switch, RequireTerms } from "@smartbuy/ui";
 import { useSession } from "../lib/auth.ts";
@@ -73,6 +74,7 @@ export function Options() {
         )}
 
         <Section title="בדיקת חיבור לשרת"><Diagnostics /></Section>
+        <p class="sb-t-support sb-secondary">גרסה: <bdi dir="ltr">{browser.runtime.getManifest().version_name ?? browser.runtime.getManifest().version}</bdi></p>
 
         <Section title="איך זה עובד">
           <p class="sb-t-body">SmartBuy הוא שירות עצמאי ואין לו קשר לחנויות. סדר הביקורות ותוכנן לא מושפעים מהכנסה או מפרסום. ביקורת מאומתת מסומנת ככזו רק כשהרכישה אומתה.</p>

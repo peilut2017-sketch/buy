@@ -24,6 +24,8 @@ export default defineConfig({
   },
   manifest: {
     name: "SmartBuy",
+    // Builds made by the trial workflow carry the commit they came from, so the version can be read in chrome://extensions.
+    ...(process.env.SB_BUILD_LABEL ? { version_name: `0.1.0 (${process.env.SB_BUILD_LABEL})` } : {}),
     description: "ביקורות אמינות ומעקב מחירים לאתרי קניות. שירות עצמאי, ללא קשר לחנויות.",
     minimum_chrome_version: "114",
     // Each permission has one stated purpose (docs/03-architecture.md, Chrome Web Store section).
