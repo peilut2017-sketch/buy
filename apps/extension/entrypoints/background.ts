@@ -16,6 +16,8 @@ import { siteById } from "../src/lib/sites.ts";
 import type { ProductSummary } from "@smartbuy/core";
 
 const SUMMARY_TTL_MS = 10 * 60 * 1000;
+/** A product with no reviews yet is looked up again soon, so a first review shows up quickly. */
+const EMPTY_SUMMARY_TTL_MS = 20 * 1000;
 const tabKey = (tabId: number) => `tab:${tabId}`;
 
 interface TabState {
@@ -26,7 +28,7 @@ interface TabState {
 async function readSummary(siteId: string, parentSku: string): Promise<ProductSummary | null> {
   const key = `summary:${siteId}:${parentSku}`;
   const cached = await getSession<{ at: number; summary: ProductSummary | null }>(key);
-  if (cached && Date.now() - cached.at < SUMMARY_TTL_MS) return cached.summary;
+  if (cached && Date.now() - cached.at < (cached.summary === null || cached.summary.reviewsCount === 0 ? EMPTY_SUMMARY_TTL_MS : SUMMARY_TTL_MS)) return cached.summary;
   const summary = await getSummary(siteId, parentSku);
   await setSession(key, { at: Date.now(), summary });
   return summary;
