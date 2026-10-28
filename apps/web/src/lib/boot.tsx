@@ -3,9 +3,11 @@ import { AuthProvider } from "@smartbuy/ui";
 import { render, type ComponentChildren } from "preact";
 import { webAuth } from "./auth.ts";
 import { BACKEND } from "./env.ts";
+import { initTheme } from "./theme.ts";
 
 /** Starts a page: points the data layer at the backend, provides sign-in, and draws the page. */
 export function boot(page: ComponentChildren): void {
+  initTheme();
   configureBackend({ url: BACKEND.url, anonKey: BACKEND.anonKey });
   render(<AuthProvider auth={webAuth}>{page}</AuthProvider>, document.getElementById("app") as HTMLElement);
 }

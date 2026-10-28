@@ -6,7 +6,7 @@ export function TextPage({ title, children, draft, active }: { title: string; ch
   return (
     <Shell active={active}>
       <article class="web__card prose">
-        <h1 class="sb-t-name" style={{ fontSize: "24px", lineHeight: "30px" }}>{title}</h1>
+        <h1 class="web__title">{title}</h1>
         {draft && (
           <p class="draft" role="note">
             <strong>טיוטה.</strong> הנוסח הזה נכתב כבסיס לבדיקה של עורך דין, ועדיין לא אושר. סימונים בסוגריים מרובעים [כך] הם פרטים שצריך להשלים. אין להשיק לציבור לפני בדיקה משפטית.

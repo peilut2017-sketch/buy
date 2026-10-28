@@ -1,5 +1,7 @@
-import { Icon, Root } from "@smartbuy/ui";
+import { Icon, Root, ThemeChoice, type ThemePref } from "@smartbuy/ui";
 import type { ComponentChildren } from "preact";
+import { useState } from "preact/hooks";
+import { loadTheme, setTheme } from "./lib/theme.ts";
 
 export type Section = "home" | "how" | "account" | "none";
 
@@ -9,7 +11,19 @@ const LINKS: { id: Exclude<Section, "none">; href: string; label: string; icon: 
   { id: "account", href: "/account", label: "החשבון שלי", icon: "user" },
 ];
 
-export function Shell({ children, active = "none", wide }: { children: ComponentChildren; active?: Section; wide?: boolean }) {
+/** The appearance is applied at once; the note appears only when the browser refused to keep it. */
+function ThemeSwitch() {
+  const [pref, setPref] = useState<ThemePref>(loadTheme);
+  const [kept, setKept] = useState(true);
+  return (
+    <div class="web__theme">
+      <ThemeChoice value={pref} onChange={(v) => { setPref(v); setKept(setTheme(v)); }} />
+      {!kept && <p class="sb-t-support" role="status">הדפדפן לא שומר את הבחירה, והיא תחול רק בעמוד הזה.</p>}
+    </div>
+  );
+}
+
+export function Shell({ children, active = "none", wide, home }: { children: ComponentChildren; active?: Section; wide?: boolean; home?: boolean }) {
   return (
     <Root class="web">
       <a class="web__skip" href="#main">דלגו לתוכן</a>
@@ -23,7 +37,7 @@ export function Shell({ children, active = "none", wide }: { children: Component
           </nav>
         </div>
       </header>
-      <main class={wide ? "web__main web__main--wide" : "web__main"} id="main">{children}</main>
+      <main class={home ? "web__main web__main--wide web__main--home" : wide ? "web__main web__main--wide" : "web__main"} id="main">{children}</main>
       <footer class="web__footer">
         <nav aria-label="מידע">
           <a href="/privacy">מדיניות פרטיות</a>
@@ -31,6 +45,7 @@ export function Shell({ children, active = "none", wide }: { children: Component
           <a href="/accessibility">הצהרת נגישות</a>
           <a href="/takedown">בקשת הסרה</a>
         </nav>
+        <ThemeSwitch />
         <p>SmartBuy הוא שירות עצמאי ואין לו קשר לחנויות. סימני המסחר שייכים לבעליהם.</p>
       </footer>
       <nav class="web__tabbar sb-shell" aria-label="ניווט תחתון">

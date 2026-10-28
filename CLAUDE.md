@@ -16,6 +16,7 @@ The owner (Nachoom) is a hands-on product owner who builds solo with Claude Code
 | `docs/06-research-checklist.md` | Phase 0 facts to verify on the live site | Before writing adapter code |
 | `docs/07-open-decisions.md` | Decisions still open | When a task depends on one |
 | `docs/12-acceptance-checklist.md` | Manual acceptance checklist for trial runs | Before inviting other people to try |
+| `docs/13-design-upgrade.md` | Motion tokens, dark theme, website redesign: the plan and its decisions | Before any motion, theme or website visual work |
 | `docs/09-status.md` | What is built, what was never verified, open questions | Before picking up work, and when updating status |
 
 Visual reference (owner's private links, open only if he shares access): sketch canvas `https://claude.ai/artifact/PSqzxhmBocwuEB47CdjnWa` (row "גרסה ג׳" is the chosen direction), planning doc `https://claude.ai/artifact/Dc1Bgon1DvXwTrk17HT3Cf`.
@@ -27,6 +28,7 @@ Project skills live in `.claude/skills/`. Use them:
 - `apple-liquid-glass` — materials, glass levels, contrast. Load for any UI surface.
 - `frontend-design` — distinctive, non-templated visual design. Load for any new UI.
 - `hebrew-rtl-ui` — RTL layout, Hebrew typography and copy rules. Load for any UI or copy.
+- `apple-design` — motion, springs, interruptibility, materials, typography, reduced motion (Emil Kowalski, MIT, from Apple's WWDC talks). Load for any motion or interaction work. Hebrew exception: no negative letter-spacing.
 - `site-adapter` — how to add or fix a store adapter. Load for any store-specific work.
 
 ## Hard rules

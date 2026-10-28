@@ -192,12 +192,47 @@ await check("on a phone the bottom tab bar is glass, the header menu is hidden, 
   await close(page);
 });
 
-await check("on a desktop the tab bar is not shown and there is no glass anywhere on the page", async () => {
+await check("on a desktop the tab bar is not shown and the only glass is the sticky header", async () => {
   const page = await open("/terminalx/w817260002");
   await page.waitForSelector(".sb-review");
-  const glass = await page.evaluate(() => [...document.querySelectorAll("*")].filter((el) => el.offsetParent !== null && /blur/.test(getComputedStyle(el).backdropFilter || "")).length);
-  assert.equal(glass, 0);
+  const glass = await page.evaluate(() => [...document.querySelectorAll("*")].filter((el) => getComputedStyle(el).display !== "none" && /blur/.test(getComputedStyle(el).backdropFilter || "")).map((el) => el.className));
+  assert.deepEqual(glass, ["web__header"]);
+  assert.equal(await page.evaluate(() => getComputedStyle(document.querySelector(".web__tabbar")).display), "none");
+  assert.equal(await page.evaluate(() => getComputedStyle(document.querySelector(".web__header")).position), "sticky");
   await close(page);
+});
+
+console.log("\nAppearance");
+
+await check("the appearance is light by default, dark by choice, remembered, and readable", async () => {
+  const page = await open("/");
+  await page.getByRole("heading", { name: "ביקורות אמינות על מוצרים באתרי קניות" }).waitFor();
+  const theme = () => page.evaluate(() => document.documentElement.getAttribute("data-sb-theme"));
+  assert.equal(await theme(), "light");
+  await page.getByRole("group", { name: "מראה" }).getByLabel("כהה").check({ force: true });
+  assert.equal(await theme(), "dark");
+  assert.equal(await page.evaluate(() => localStorage.getItem("sb-theme")), "dark");
+  assert.equal(await page.evaluate(() => getComputedStyle(document.body).backgroundColor), "rgb(17, 18, 20)");
+  await shot(page, "home-dark");
+  const home = await audit(page, "home-dark");
+  assert.deepEqual(home, [], JSON.stringify(home));
+  await page.reload();
+  await page.getByRole("heading", { name: "ביקורות אמינות על מוצרים באתרי קניות" }).waitFor();
+  assert.equal(await theme(), "dark", "the choice survives a reload");
+  await page.getByRole("group", { name: "מראה" }).getByLabel("לפי המערכת").check({ force: true });
+  await page.emulateMedia({ colorScheme: "light" });
+  await page.waitForFunction(() => document.documentElement.getAttribute("data-sb-theme") === "light");
+  await page.emulateMedia({ colorScheme: "dark" });
+  await page.waitForFunction(() => document.documentElement.getAttribute("data-sb-theme") === "dark", null, { timeout: 3000 });
+  await close(page);
+  const product = await open("/terminalx/w817260002");
+  await product.evaluate(() => localStorage.setItem("sb-theme", "dark"));
+  await product.reload();
+  await product.waitForSelector(".sb-review");
+  await shot(product, "product-dark");
+  const violations = await audit(product, "product-dark");
+  assert.deepEqual(violations, [], JSON.stringify(violations));
+  await close(product);
 });
 
 console.log("\nSigned in");
