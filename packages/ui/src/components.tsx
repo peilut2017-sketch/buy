@@ -2,6 +2,7 @@ import type { ComponentChildren, JSX } from "preact";
 import { useId, useRef } from "preact/hooks";
 import type { FitMeter as FitMeterData } from "@smartbuy/core";
 import { Icon, type IconName } from "./icons.tsx";
+import { THEME_OPTIONS, type ThemePref } from "./theme.ts";
 
 export function cx(...parts: (string | false | null | undefined)[]): string {
   return parts.filter(Boolean).join(" ");
@@ -116,8 +117,10 @@ export function Segmented<T extends string>({ items, value, onChange, label }: {
     onChange(item.id);
     refs.current[next]?.focus();
   };
+  const active = Math.max(0, items.findIndex((item) => item.id === value));
   return (
-    <div class="sb-segmented" role="tablist" aria-label={label}>
+    <div class="sb-segmented" role="tablist" aria-label={label} style={{ "--n": String(items.length), "--i": String(active) }}>
+      <span class="sb-segmented__thumb" aria-hidden="true" />
       {items.map((item, i) => (
         <button
           key={item.id}
@@ -348,4 +351,11 @@ export function Switch({ checked, onChange, label, description, disabled }: { ch
       <span class="sb-switch__track" aria-hidden="true" />
     </label>
   );
+}
+
+/* ---------------------------------------------------------------- appearance */
+
+/** Light, dark or follow the system. The caller stores the choice and says whether storing it worked. */
+export function ThemeChoice({ value, onChange, disabled }: { value: ThemePref; onChange: (v: ThemePref) => void; disabled?: boolean }) {
+  return <ChoiceGroup legend="מראה" options={THEME_OPTIONS} value={value} onChange={onChange} disabled={disabled} />;
 }

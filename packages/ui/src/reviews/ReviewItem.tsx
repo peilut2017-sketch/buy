@@ -49,21 +49,22 @@ export function ReviewItem({ review, now, busy, onHelpful, onReport, onEdit, onD
         {review.author && <span class="sb-t-support sb-secondary">{authorLine(review)}</span>}
       </header>
 
-      <div class="sb-row sb-gap-2 sb-wrap">
-        <Stars value={review.rating} />
-        {timing.stage && <Chip>{timing.stage}</Chip>}
+      {/* What the rating is, and when, and for which variant, read as one group. */}
+      <div class="review-meta">
+        <div class="sb-row sb-gap-2 sb-wrap">
+          <Stars value={review.rating} />
+          {timing.stage && <Chip>{timing.stage}</Chip>}
+        </div>
+        {(timing.afterPurchase || timing.written) && (
+          <p class="sb-t-support sb-secondary">
+            {timing.written}
+            {timing.afterPurchase && `, ${timing.afterPurchase.replace(/^נכתבה /, "")}`}
+            {timing.selfReportedNote && ` (${timing.selfReportedNote})`}
+            {timing.edited && ` · ${timing.edited}`}
+          </p>
+        )}
+        {variant && <p class="sb-t-support sb-secondary">נרכש: {variant}</p>}
       </div>
-
-      {(timing.afterPurchase || timing.written) && (
-        <p class="sb-t-support sb-secondary">
-          {timing.written}
-          {timing.afterPurchase && `, ${timing.afterPurchase.replace(/^נכתבה /, "")}`}
-          {timing.selfReportedNote && ` (${timing.selfReportedNote})`}
-          {timing.edited && ` · ${timing.edited}`}
-        </p>
-      )}
-
-      {variant && <p class="sb-t-support sb-secondary">נרכש: {variant}</p>}
       {review.title && <h2 class="sb-t-heading">{review.title}</h2>}
 
       <p class={long && !expanded ? "sb-review__body sb-review__body--clamped" : "sb-review__body"}>{review.body}</p>

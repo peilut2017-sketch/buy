@@ -1,6 +1,9 @@
-/* SmartBuy design tokens. Source of truth: docs/02-design-system.md, section 2.1.
-   Loaded inside every shadow root (:host) and on every page (:root). Values only; no component styles here. */
+/* SmartBuy design tokens. Source of truth: docs/02-design-system.md, section 2.1, and docs/13-design-upgrade.md.
+   Loaded inside every shadow root (:host) and on every page (:root). Values only; no component styles here.
+   The dark theme is chosen by the data-sb-theme="dark" attribute (see theme.ts), not by a media query, so it can be picked and tested. */
 :host, :root {
+  color-scheme: light;
+
   /* color */
   --sb-canvas: #F5F6F8;
   --sb-surface: #FFFFFF;
@@ -11,6 +14,7 @@
   --sb-accent: #087FE8;          /* tints, focus rings, switches, chart target line */
   --sb-accent-strong: #0870D0;   /* filled buttons with white text (see 2.2) */
   --sb-accent-text: #0864BA;     /* accent-coloured text on white */
+  --sb-on-accent: #FFFFFF;       /* text on a filled accent button */
   --sb-success: #248A52;
   --sb-success-text: #1D6E42;
   --sb-warning: #B87516;
@@ -19,6 +23,14 @@
   --sb-star: #E3A33B;
   --sb-star-empty: #DCDDE1;
   --sb-skeleton: #EEF0F3;
+
+  /* state tints (hover and status backgrounds) */
+  --sb-hover: rgba(30, 35, 45, 0.07);
+  --sb-accent-tint: rgba(8, 127, 232, 0.08);
+  --sb-success-tint: rgba(36, 138, 82, 0.1);
+  --sb-danger-tint: rgba(197, 59, 59, 0.07);
+  --sb-warning-tint: rgba(184, 117, 22, 0.08);
+  --sb-knob-shadow: 0 1px 2px rgba(20, 30, 50, 0.25);
 
   /* glass, level B (light) */
   --sb-glass-bg: rgba(248, 249, 252, 0.78);
@@ -33,6 +45,7 @@
   --sb-glass-c-border: rgba(255, 255, 255, 0.9);
   --sb-glass-c-shadow: 0 1px 3px rgba(20, 30, 50, 0.12);
   --sb-segment-track: rgba(118, 118, 128, 0.12);
+  --sb-segment-hover: rgba(255, 255, 255, 0.5);
 
   /* spacing */
   --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px;
@@ -44,14 +57,96 @@
   /* type */
   --font: -apple-system, BlinkMacSystemFont, "Segoe UI", "Assistant", sans-serif;
 
-  /* motion */
-  --dur-hover: 150ms; --dur-press: 120ms; --dur-panel: 220ms;
+  /* motion. A spring needs no fixed duration; these are the settle times of the curves below.
+     Direction of travel is multiplied by --sb-dir so that "forward" points toward the inline end in a right-to-left layout. */
+  --dur-hover: 150ms; --dur-press: 80ms; --dur-release: 240ms; --dur-panel: 320ms; --dur-fade: 160ms;
   --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  /* Critically damped spring (damping 1.0, no overshoot): graceful and quiet. Falls back to ease-out where linear() is not supported. */
+  --ease-spring: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --motion-shift: 8px;
+  --motion-press-scale: 0.97;
+  --sb-dir: -1;
+}
+@supports (transition-timing-function: linear(0, 1)) {
+  :host, :root {
+    --ease-spring: linear(0, 0.0326, 0.1089, 0.2057, 0.3083, 0.4082, 0.5005, 0.5831, 0.6551, 0.7168, 0.7689, 0.8125, 0.8486, 0.8782, 0.9024, 0.922, 0.9379, 0.9507, 0.9609, 0.9691, 0.9757, 0.9812, 0.9858, 0.9895, 0.9925, 0.995, 0.9969, 0.9985, 1);
+  }
 }
 
+/* ---- dark theme: designed, not inverted ---- */
+:root[data-sb-theme="dark"], :host([data-sb-theme="dark"]) {
+  color-scheme: dark;
+  --sb-canvas: #111214;
+  --sb-surface: #1C1D20;
+  --sb-text-primary: #F2F2F4;
+  --sb-text-secondary: #A4A7AF;
+  --sb-divider: rgba(255, 255, 255, 0.1);
+  --sb-control-border: rgba(255, 255, 255, 0.22);
+  --sb-accent: #4DA3FF;
+  --sb-accent-strong: #0A74D9;
+  --sb-accent-text: #6DB6FF;
+  --sb-on-accent: #FFFFFF;
+  --sb-success: #4FBF80;
+  --sb-success-text: #62CE92;
+  --sb-warning: #E2A43C;
+  --sb-danger: #EA6366;
+  --sb-danger-text: #FF8F91;
+  --sb-star: #F0B04A;
+  --sb-star-empty: #3E4047;
+  --sb-skeleton: #2A2C31;
+
+  --sb-hover: rgba(255, 255, 255, 0.08);
+  --sb-accent-tint: rgba(77, 163, 255, 0.14);
+  --sb-success-tint: rgba(79, 191, 128, 0.16);
+  --sb-danger-tint: rgba(234, 99, 102, 0.16);
+  --sb-warning-tint: rgba(226, 164, 60, 0.14);
+  --sb-knob-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+
+  --sb-glass-bg: rgba(34, 35, 39, 0.9);
+  --sb-glass-bg-opaque: rgba(34, 35, 39, 0.95);
+  --sb-glass-border: rgba(255, 255, 255, 0.14);
+  --sb-glass-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  --sb-glass-shadow: 0 8px 28px rgba(0, 0, 0, 0.5);
+
+  --sb-glass-c-bg: rgba(74, 76, 84, 0.96);
+  --sb-glass-c-border: rgba(255, 255, 255, 0.16);
+  --sb-glass-c-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+  --sb-segment-track: rgba(255, 255, 255, 0.1);
+  --sb-segment-hover: rgba(255, 255, 255, 0.08);
+}
+
+/* Reduced transparency: frostier, no blur. */
 @media (prefers-reduced-transparency: reduce) {
   :host, :root { --sb-glass-bg: rgba(248, 249, 252, 0.98); --sb-glass-blur: none; }
+  :root[data-sb-theme="dark"], :host([data-sb-theme="dark"]) { --sb-glass-bg: rgba(34, 35, 39, 0.98); }
 }
+
+/* Reduced motion means gentler motion, not no feedback: distances and scaling go to zero, a short fade stays. */
 @media (prefers-reduced-motion: reduce) {
-  :host, :root { --dur-hover: 0ms; --dur-press: 0ms; --dur-panel: 0ms; }
+  :host, :root {
+    --motion-shift: 0px;
+    --motion-press-scale: 1;
+    --dur-release: 120ms; --dur-panel: 120ms; --dur-fade: 120ms;
+    --ease-spring: ease-out;
+  }
+}
+
+/* Increased contrast: stronger lines and a solid shell. */
+@media (prefers-contrast: more) {
+  :host, :root {
+    --sb-divider: rgba(30, 35, 45, 0.35);
+    --sb-control-border: rgba(30, 35, 45, 0.6);
+    --sb-text-secondary: #4A4D54;
+    --sb-glass-bg: rgba(248, 249, 252, 1);
+    --sb-glass-bg-opaque: rgba(248, 249, 252, 1);
+    --sb-glass-border: rgba(30, 35, 45, 0.45);
+  }
+  :root[data-sb-theme="dark"], :host([data-sb-theme="dark"]) {
+    --sb-divider: rgba(255, 255, 255, 0.4);
+    --sb-control-border: rgba(255, 255, 255, 0.65);
+    --sb-text-secondary: #C8CAD0;
+    --sb-glass-bg: rgba(28, 29, 32, 1);
+    --sb-glass-bg-opaque: rgba(28, 29, 32, 1);
+    --sb-glass-border: rgba(255, 255, 255, 0.5);
+  }
 }

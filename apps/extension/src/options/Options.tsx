@@ -1,10 +1,11 @@
 import { browser } from "wxt/browser";
 import { useEffect, useState } from "preact/hooks";
-import { AccountPanel, DataControls, NotificationSettingsPanel, SizeProfilePanel, Root, SignInCard, Skel, Switch, RequireTerms } from "@smartbuy/ui";
+import { AccountPanel, DataControls, NotificationSettingsPanel, SizeProfilePanel, Root, SignInCard, Skel, Switch, RequireTerms, ThemeChoice, type ThemePref } from "@smartbuy/ui";
 import { useSession } from "../lib/auth.ts";
 import { BACKEND_CONFIGURED } from "../lib/env.ts";
 import { LISTING_SETTING } from "../lib/settings.ts";
 import { getLocal, setLocal } from "../lib/storage.ts";
+import { loadTheme, saveTheme } from "../lib/theme.ts";
 import { Diagnostics } from "./Diagnostics.tsx";
 import { StoreList } from "./StoreList.tsx";
 
@@ -41,6 +42,31 @@ function ListingStarsSwitch() {
   );
 }
 
+/** The choice is stored in this browser. The page follows it through the storage change, so it is shown as changed only after it was stored. */
+function ThemeSetting() {
+  const [value, setValue] = useState<ThemePref | null>(null);
+  const [failed, setFailed] = useState(false);
+  useEffect(() => {
+    void loadTheme().then(setValue);
+  }, []);
+  const change = async (next: ThemePref) => {
+    setFailed(false);
+    try {
+      await saveTheme(next);
+      setValue(next);
+    } catch {
+      setFailed(true);
+    }
+  };
+  return (
+    <div class="sb-stack sb-gap-2">
+      <ThemeChoice value={value ?? "light"} disabled={value === null} onChange={change} />
+      <p class="sb-t-support sb-secondary">חל על הפס בעמוד המוצר, על פאנל הצד, על החלון הזה ועל חלון התוסף.</p>
+      {failed && <p class="sb-t-support" role="alert">ההגדרה לא נשמרה. נסו שוב.</p>}
+    </div>
+  );
+}
+
 export function Options() {
   const session = useSession();
   return (
@@ -54,6 +80,8 @@ export function Options() {
         </Section>
 
         <Section title="תצוגה בחנות"><ListingStarsSwitch /></Section>
+
+        <Section title="מראה"><ThemeSetting /></Section>
 
         {BACKEND_CONFIGURED && (
           <Section title="חשבון">

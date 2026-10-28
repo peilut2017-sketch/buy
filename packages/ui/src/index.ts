@@ -19,3 +19,4 @@ export * from "./tracking/WatchList.tsx";
 export * from "./reviews/UpdateForm.tsx";
 export * from "./settings/SizeProfile.tsx";
 export * from "./account/PurchasesList.tsx";
+export * from "./theme.ts";

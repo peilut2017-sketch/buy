@@ -151,8 +151,10 @@ export function App() {
       )}
       <main class="panel__main">
         {target && view.name === "list" ? (
-          <div class="sb-stack sb-gap-4" role="tabpanel" id={`sb-panel-${tabName}`} aria-labelledby={`sb-tab-${tabName}`}>{content}</div>
-        ) : content}
+          <div key={tabName} class="sb-stack sb-gap-4 sb-enter" role="tabpanel" id={`sb-panel-${tabName}`} aria-labelledby={`sb-tab-${tabName}`}>{content}</div>
+        ) : (
+          <div key={view.name} class="sb-enter sb-enter--push">{content}</div>
+        )}
       </main>
       <footer class="panel__footer">SmartBuy הוא שירות עצמאי ואין לו קשר לחנויות.</footer>
     </Root>

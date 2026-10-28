@@ -18,6 +18,7 @@ import {
 import { NetworkError, deleteReview, getReviews, getSizeProfile, getSummary, pickUsualSize, setHelpful, type Identity, type ReviewTarget, type ReviewsResult } from "@smartbuy/data";
 import { useMemo, useState } from "preact/hooks";
 import { Button, CompactSelect, FitMeter, Notice, Skel, Stars } from "../components.tsx";
+import { Icon } from "../icons.tsx";
 import { useResource } from "../hooks.ts";
 import { ReviewItem } from "./ReviewItem.tsx";
 
@@ -80,6 +81,7 @@ export function ReviewsView({ target, identity, getIdentity, version, onWrite, o
   const data = useResource(() => load(target, identity), [target.siteId, target.parentSku, identity?.userId ?? "", version]);
   const [filters, setFilters] = useState<ReviewFilters>(NO_FILTERS);
   const [sort, setSort] = useState<SortMode>("relevance");
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [busyId, setBusyId] = useState<number | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [local, setLocal] = useState<{ version: number; patches: Map<number, Partial<ReviewView>>; removed: Set<number> }>({ version, patches: new Map(), removed: new Set() });
@@ -172,21 +174,34 @@ export function ReviewsView({ target, identity, getIdentity, version, onWrite, o
       ) : null}
 
       {all.length > 0 && (
-        <section class="filters" aria-label="סינון ומיון">
-          <CompactSelect label="סינון לפי דירוג" value={filters.rating === null ? "" : String(filters.rating)} onChange={(v) => setFilters({ ...filters, rating: v ? Number(v) : null })} options={RATING_OPTIONS} placeholder="כל הדירוגים" />
-          <CompactSelect label="סינון לפי התאמת מידה" value={filters.fit ?? ""} onChange={(v) => setFilters({ ...filters, fit: (v || null) as ReviewFilters["fit"] })} options={FIT_OPTIONS} placeholder="כל ההתאמות" />
-          <CompactSelect label="מיון" value={sort} onChange={(v) => setSort(v as SortMode)} options={Object.entries(SORT_LABEL).map(([value, label]) => ({ value, label }))} />
-          {colors.length > 1 && (
-            <CompactSelect label="סינון לפי צבע" value={filters.color ?? ""} onChange={(v) => setFilters({ ...filters, color: v || null })} options={colors.map((c) => ({ value: c.color, label: `${c.color} (${c.count})` }))} placeholder="כל הצבעים" />
-          )}
-          {pageColorKnown && pageColor && (
-            <button type="button" class="toggle-chip" aria-pressed={filters.color?.toLowerCase() === pageColor.toLowerCase()} onClick={() => setFilters({ ...filters, color: filters.color?.toLowerCase() === pageColor.toLowerCase() ? null : pageColor })}>
-              רק הצבע שבעמוד
+        <section class="sb-stack sb-gap-2" aria-label="סינון ומיון">
+          <div class="filters">
+            <button type="button" class="sb-btn sb-btn--secondary sb-btn--sm" aria-expanded={filtersOpen} aria-controls="sb-filters" onClick={() => setFiltersOpen(!filtersOpen)}>
+              <Icon name="sliders" size={16} />
+              סינון
+              {filterCount > 0 && <span class="sb-badge" aria-label={`${filterCount} מסננים פעילים`}>{filterCount}</span>}
             </button>
-          )}
-          <button type="button" class="toggle-chip" aria-pressed={filters.verifiedOnly} onClick={() => setFilters({ ...filters, verifiedOnly: !filters.verifiedOnly })}>רק מאומתות</button>
-          <button type="button" class="toggle-chip" aria-pressed={filters.longTermOnly} onClick={() => setFilters({ ...filters, longTermOnly: !filters.longTermOnly })}>שימוש ממושך</button>
-          {filterCount > 0 && <Button variant="quiet" small onClick={() => setFilters(NO_FILTERS)}>ניקוי סינון ({filterCount})</Button>}
+            <CompactSelect label="מיון" value={sort} onChange={(v) => setSort(v as SortMode)} options={Object.entries(SORT_LABEL).map(([value, label]) => ({ value, label }))} />
+            {filterCount > 0 && <Button variant="quiet" small onClick={() => setFilters(NO_FILTERS)}>ניקוי סינון</Button>}
+          </div>
+          <div class="sb-disclosure" id="sb-filters" data-open={filtersOpen ? "true" : "false"}>
+            <div class="sb-disclosure__inner">
+              <div class="filters">
+                <CompactSelect label="סינון לפי דירוג" value={filters.rating === null ? "" : String(filters.rating)} onChange={(v) => setFilters({ ...filters, rating: v ? Number(v) : null })} options={RATING_OPTIONS} placeholder="כל הדירוגים" />
+                <CompactSelect label="סינון לפי התאמת מידה" value={filters.fit ?? ""} onChange={(v) => setFilters({ ...filters, fit: (v || null) as ReviewFilters["fit"] })} options={FIT_OPTIONS} placeholder="כל ההתאמות" />
+                {colors.length > 1 && (
+                  <CompactSelect label="סינון לפי צבע" value={filters.color ?? ""} onChange={(v) => setFilters({ ...filters, color: v || null })} options={colors.map((c) => ({ value: c.color, label: `${c.color} (${c.count})` }))} placeholder="כל הצבעים" />
+                )}
+                {pageColorKnown && pageColor && (
+                  <button type="button" class="toggle-chip" aria-pressed={filters.color?.toLowerCase() === pageColor.toLowerCase()} onClick={() => setFilters({ ...filters, color: filters.color?.toLowerCase() === pageColor.toLowerCase() ? null : pageColor })}>
+                    רק הצבע שבעמוד
+                  </button>
+                )}
+                <button type="button" class="toggle-chip" aria-pressed={filters.verifiedOnly} onClick={() => setFilters({ ...filters, verifiedOnly: !filters.verifiedOnly })}>רק מאומתות</button>
+                <button type="button" class="toggle-chip" aria-pressed={filters.longTermOnly} onClick={() => setFilters({ ...filters, longTermOnly: !filters.longTermOnly })}>שימוש ממושך</button>
+              </div>
+            </div>
+          </div>
         </section>
       )}
 

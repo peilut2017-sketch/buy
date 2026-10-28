@@ -1,5 +1,6 @@
 import { fitMeter, formatDateHe, formatIls, formatRating, countLabel, REVIEWS, VERIFIED_REVIEWS, type ProductSummary } from "@smartbuy/core";
 import { Button, FitMeter, IconButton, Root, Skel, Stars } from "@smartbuy/ui";
+import { useEffect, useRef, useState } from "preact/hooks";
 import type { PanelMode } from "../lib/messages.ts";
 
 export type StripState = { kind: "loading" } | { kind: "ready"; summary: ProductSummary | null } | { kind: "error" };
@@ -31,8 +32,10 @@ function Brand() {
   );
 }
 
-function PriceLine({ price, onOpen }: { price: StripPrice | null; onOpen: StripProps["onOpen"] }) {
+/** What was measured about the price. When nothing was, there is no row at all. */
+function PriceLine({ price }: { price: StripPrice | null }) {
   const lowest = price?.lowest ?? null;
+  if (price?.current == null && !lowest) return null;
   return (
     <div class="strip__price">
       {price?.current != null && <span class="strip__amount sb-num">{formatIls(price.current)}</span>}
@@ -41,6 +44,15 @@ function PriceLine({ price, onOpen }: { price: StripPrice | null; onOpen: StripP
           הכי נמוך ב-90 יום: <span class="sb-num">{formatIls(lowest.price)}</span>, מ-{formatDateHe(new Date(lowest.since))}
         </span>
       )}
+    </div>
+  );
+}
+
+/** The two things a person can do from the strip, side by side and the same width. */
+function Actions({ primary, onOpen }: { primary: { label: string; mode: PanelMode }; onOpen: StripProps["onOpen"] }) {
+  return (
+    <div class="strip__actions">
+      <Button variant="primary" small onClick={() => onOpen(primary.mode)}>{primary.label}</Button>
       <Button small icon="bell" onClick={() => onOpen("tracking")}>מעקב מחיר</Button>
     </div>
   );
@@ -74,10 +86,8 @@ function Body({ state, price, advice, onOpen, onRetry }: Pick<StripProps, "state
       <div class="sb-stack sb-gap-2">
         <span class="sb-t-heading">עוד אין ביקורות על המוצר הזה</span>
         <span class="sb-t-support sb-secondary">קנית אותו? הביקורת שלך תעזור לבאים אחריך.</span>
-        <div>
-          <Button variant="primary" small onClick={() => onOpen("write")}>כתיבת ביקורת</Button>
-        </div>
-        <PriceLine price={price} onOpen={onOpen} />
+        <PriceLine price={price} />
+        <Actions primary={{ label: "כתיבת ביקורת", mode: "write" }} onOpen={onOpen} />
       </div>
     );
   }
@@ -100,27 +110,57 @@ function Body({ state, price, advice, onOpen, onRetry }: Pick<StripProps, "state
           <span class="sb-t-support sb-secondary">{advice.support}</span>
         </p>
       )}
-      <div>
-        <Button variant="primary" small onClick={() => onOpen("reviews")}>ביקורות</Button>
-      </div>
-      <PriceLine price={price} onOpen={onOpen} />
+      <PriceLine price={price} />
+      <Actions primary={{ label: "ביקורות", mode: "reviews" }} onOpen={onOpen} />
     </div>
   );
 }
 
+/** How long the exit may take before the strip is removed anyway (the transition end event is the normal trigger). */
+const EXIT_FALLBACK_MS = 400;
+
 export function Strip({ state, price, advice, opaque, onOpen, onClose, onRetry }: StripProps) {
+  // It comes in from its corner and leaves by the same path (spatial consistency). Entering starts one frame after the first paint.
+  const [shown, setShown] = useState(false);
+  const [leaving, setLeaving] = useState(false);
+  const motion = useRef<HTMLDivElement>(null);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setShown(true));
+    return () => {
+      cancelAnimationFrame(id);
+      if (timer.current) clearTimeout(timer.current);
+    };
+  }, []);
+
+  const close = () => {
+    if (leaving) return;
+    setLeaving(true);
+    let done = false;
+    const finish = () => {
+      if (done) return;
+      done = true;
+      onClose();
+    };
+    motion.current?.addEventListener("transitionend", (e) => { if (e.target === motion.current && e.propertyName === "opacity") finish(); });
+    timer.current = setTimeout(finish, EXIT_FALLBACK_MS);
+  };
+
   return (
     <Root class="strip">
-      <section class={opaque ? "sb-shell sb-shell--opaque" : "sb-shell"} aria-label="SmartBuy: ביקורות על המוצר">
-        <div class="sb-region strip__inner">
-          <div class="strip__top">
-            <Brand />
-            <span class="sb-grow" />
-            <IconButton icon="close" label="סגירת הפס" onClick={onClose} />
+      <div ref={motion} class={shown && !leaving ? "strip__motion is-in" : "strip__motion"}>
+        <section class={opaque ? "sb-shell sb-shell--opaque" : "sb-shell"} aria-label="SmartBuy: ביקורות על המוצר">
+          <div class="sb-region strip__inner">
+            <div class="strip__top">
+              <Brand />
+              <span class="sb-grow" />
+              <IconButton icon="close" label="סגירת הפס" onClick={close} />
+            </div>
+            <Body state={state} price={price} advice={advice} onOpen={onOpen} onRetry={onRetry} />
           </div>
-          <Body state={state} price={price} advice={advice} onOpen={onOpen} onRetry={onRetry} />
-        </div>
-      </section>
+        </section>
+      </div>
     </Root>
   );
 }

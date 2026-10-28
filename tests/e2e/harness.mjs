@@ -42,6 +42,8 @@ export async function launch() {
     args: ["--headless=new", `--disable-extensions-except=${extension}`, `--load-extension=${extension}`, "--no-first-run"],
     viewport: { width: 1280, height: 900 },
     locale: "he-IL",
+    // Checks click and measure at once, so they run without the travel of entrances. The motion checks switch it back on per page.
+    reducedMotion: "reduce",
   });
 
   await context.route("https://www.terminalx.com/**", (route) => {

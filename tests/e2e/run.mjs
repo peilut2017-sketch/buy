@@ -10,6 +10,8 @@ const a11y = [];
 let current = "";
 
 async function check(name, fn) {
+  // SB_ONLY=text runs only the checks whose name contains it (faster loop while fixing one).
+  if (process.env.SB_ONLY && !name.includes(process.env.SB_ONLY)) return;
   current = name;
   const before = new Set(context.pages());
   try {
@@ -63,7 +65,11 @@ async function openPanel(sku, query = "") {
   return { product, panel, tabId };
 }
 
+/** Entrances fade in; the colours axe reads are the blended ones until they end. */
+const settled = (page) => page.waitForFunction(() => document.getAnimations().every((a) => a.playState !== "running"), null, { timeout: 5000 });
+
 async function runAxe(page, label, selector) {
+  await settled(page);
   // evaluate() is not subject to the extension pages' CSP, unlike addScriptTag with inline content.
   await page.evaluate(axeSource);
   const result = await page.evaluate(async (sel) => {
@@ -213,6 +219,91 @@ await check("the strip passes the accessibility audit on light and dark pages", 
   }
 });
 
+console.log("\nMotion and themes");
+
+await check("the strip comes in from its corner and leaves by the same path, and reduced motion removes the travel", async () => {
+  const motion = (page) => page.evaluate(() => {
+    const el = document.querySelector("smartbuy-strip")?.shadowRoot?.querySelector(".strip__motion");
+    return el ? { shift: getComputedStyle(el).getPropertyValue("--motion-shift").trim(), opacity: getComputedStyle(el).opacity, entered: el.classList.contains("is-in") } : null;
+  });
+  const full = await context.newPage();
+  await full.emulateMedia({ reducedMotion: "no-preference" });
+  await full.goto("https://www.terminalx.com/w817260002");
+  await stripOf(full);
+  assert.equal((await motion(full)).shift, "8px", "full motion keeps the travel");
+  await settled(full);
+  const entered = await motion(full);
+  assert.equal(entered.opacity, "1");
+  assert.equal(entered.entered, true);
+  await full.locator("smartbuy-strip").getByRole("button", { name: "סגירת הפס" }).click();
+  assert.equal(await full.locator("smartbuy-strip").count(), 1, "the exit is a transition, not a cut");
+  await full.waitForFunction(() => !document.querySelector("smartbuy-strip"), null, { timeout: 3000 });
+  const reduced = await productPage("w817260002");
+  await stripOf(reduced);
+  assert.equal((await motion(reduced)).shift, "0px", "reduced motion has no travel, only the fade");
+});
+
+await check("the segmented control moves its active surface to the chosen tab", async () => {
+  const { panel } = await openPanel("w817260002");
+  await panel.waitForSelector(".sb-segmented");
+  const place = () => panel.evaluate(() => {
+    const thumb = document.querySelector(".sb-segmented__thumb").getBoundingClientRect();
+    const tab = document.querySelector(".sb-segment[aria-selected=true]").getBoundingClientRect();
+    return { thumb: Math.round(thumb.x), tab: Math.round(tab.x), index: getComputedStyle(document.querySelector(".sb-segmented")).getPropertyValue("--i").trim() };
+  });
+  const first = await place();
+  assert.equal(first.index, "0");
+  assert.ok(Math.abs(first.thumb - first.tab) <= 2, `thumb ${first.thumb} should sit under tab ${first.tab}`);
+  await panel.getByRole("tab", { name: "מחיר ומעקב" }).click();
+  await settled(panel);
+  const second = await place();
+  assert.equal(second.index, "1");
+  assert.ok(second.thumb < first.thumb, "in a right-to-left layout the next tab is to the left");
+  assert.ok(Math.abs(second.thumb - second.tab) <= 2, `thumb ${second.thumb} should sit under tab ${second.tab}`);
+});
+
+await check("dark mode is a choice: light by default, then live in the strip and the panel, both pass the audit", async () => {
+  const { product, panel } = await openPanel("w817260002");
+  try {
+    await panel.waitForSelector(".sb-review");
+    const theme = (page) => page.evaluate(() => document.documentElement.getAttribute("data-sb-theme"));
+    assert.equal(await theme(panel), "light");
+    await worker.evaluate(() => chrome.storage.local.set({ theme: "dark" }));
+    await panel.waitForFunction(() => document.documentElement.getAttribute("data-sb-theme") === "dark");
+    await product.waitForFunction(() => document.querySelector("smartbuy-strip")?.getAttribute("data-sb-theme") === "dark");
+    assert.equal(await panel.evaluate(() => getComputedStyle(document.body).backgroundColor), "rgb(28, 29, 32)");
+    await shot(panel, "panel-dark", { fullPage: true });
+    await shot(product, "strip-in-dark-theme");
+    for (const [page, label, selector] of [[panel, "panel-dark", null], [product, "strip-dark-theme", "smartbuy-strip"]]) {
+      const violations = await runAxe(page, label, selector);
+      assert.deepEqual(violations, [], `${label}: ${JSON.stringify(violations)}`);
+    }
+    // Following the system: the OS preference decides, and a change is followed at once.
+    await worker.evaluate(() => chrome.storage.local.set({ theme: "system" }));
+    await panel.emulateMedia({ colorScheme: "light" });
+    await panel.waitForFunction(() => document.documentElement.getAttribute("data-sb-theme") === "light");
+    await panel.emulateMedia({ colorScheme: "dark" });
+    await panel.waitForFunction(() => document.documentElement.getAttribute("data-sb-theme") === "dark");
+  } finally {
+    await worker.evaluate(() => chrome.storage.local.remove("theme"));
+  }
+});
+
+await check("the options page stores the chosen appearance only when the browser accepted it", async () => {
+  const page = await context.newPage();
+  try {
+    await page.goto(env.extUrl("options.html"));
+    await page.getByRole("group", { name: "מראה" }).getByLabel("כהה").check({ force: true });
+    await page.waitForFunction(() => document.documentElement.getAttribute("data-sb-theme") === "dark");
+    assert.equal(await worker.evaluate(async () => (await chrome.storage.local.get("theme")).theme), "dark");
+    await shot(page, "options-dark");
+    const violations = await runAxe(page, "options-dark", null);
+    assert.deepEqual(violations, [], JSON.stringify(violations));
+  } finally {
+    await worker.evaluate(() => chrome.storage.local.remove("theme"));
+  }
+});
+
 console.log("\nSide panel");
 
 await check("panel shows the product, the summary, the fit meter and every review with its label", async () => {
@@ -246,8 +337,15 @@ await check("long review text is cut and can be expanded", async () => {
 await check("filters narrow the list, show a count, and clear", async () => {
   const { product, panel } = await openPanel("w817260002");
   await panel.waitForSelector(".sb-review");
+  // The filters are folded away until asked for, and the button says how many are active.
+  const toggle = panel.getByRole("button", { name: /^סינון/ });
+  assert.equal(await toggle.getAttribute("aria-expanded"), "false");
+  assert.ok(!(await panel.getByRole("button", { name: "רק מאומתות" }).isVisible()), "folded filters must not be reachable");
+  await toggle.click();
+  assert.equal(await toggle.getAttribute("aria-expanded"), "true");
   await panel.getByRole("button", { name: "רק מאומתות" }).click();
   assert.equal(await panel.locator(".sb-review").count(), 1);
+  assert.ok((await toggle.innerText()).includes("1"), "the button shows the number of active filters");
   await panel.getByRole("button", { name: /ניקוי סינון/ }).first().click();
   assert.equal(await panel.locator(".sb-review").count(), 3);
   await panel.getByRole("button", { name: "שימוש ממושך" }).click();
@@ -255,7 +353,7 @@ await check("filters narrow the list, show a count, and clear", async () => {
   await panel.getByRole("button", { name: "רק מאומתות" }).click();
   assert.ok(await panel.getByText("אין ביקורות שמתאימות לסינון").isVisible());
   await shot(panel, "panel-filtered-empty");
-  await panel.getByRole("button", { name: "ניקוי סינון", exact: true }).click();
+  await panel.getByRole("button", { name: "ניקוי סינון", exact: true }).first().click();
   assert.equal(await panel.locator(".sb-review").count(), 3);
   await product.close();
   await panel.close();
@@ -264,6 +362,7 @@ await check("filters narrow the list, show a count, and clear", async () => {
 await check("reviews can be filtered by colour, with a count per colour", async () => {
   const { product, panel } = await openPanel("w817260002");
   await panel.waitForSelector(".sb-review");
+  await panel.getByRole("button", { name: /^סינון/ }).click();
   const select = panel.getByLabel("סינון לפי צבע");
   await select.selectOption({ label: "אדום (1)" });
   await panel.waitForFunction(() => document.querySelectorAll(".sb-review").length === 1);

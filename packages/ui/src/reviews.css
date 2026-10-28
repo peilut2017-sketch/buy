@@ -9,6 +9,7 @@
 .filters .sb-select { inline-size: auto; min-block-size: 32px; padding-block: 4px; font-size: 12px; }
 .toggle-chip { min-block-size: 32px; padding-inline: var(--space-3); border-radius: var(--radius-sm); border: 1px solid var(--sb-control-border); background: var(--sb-surface); font-size: 12px; }
 .toggle-chip[aria-pressed="true"] { background: var(--sb-text-primary); border-color: var(--sb-text-primary); color: var(--sb-surface); font-weight: 600; }
+.review-meta { display: flex; flex-direction: column; gap: var(--space-1); }
 .review-actions { display: flex; flex-wrap: wrap; gap: var(--space-1); margin-inline-start: calc(var(--space-2) * -1); }
 .sr-live { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); }
 .form { display: flex; flex-direction: column; gap: var(--space-4); }

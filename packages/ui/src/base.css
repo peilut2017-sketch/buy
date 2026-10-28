@@ -21,6 +21,8 @@
   -webkit-font-smoothing: antialiased;
   text-size-adjust: 100%;
 }
+.sb-root :where(h1, h2, h3) { text-wrap: balance; }
+.sb-root :where(p, li) { text-wrap: pretty; }
 
 .sb-root :where(h1, h2, h3, h4, p, ul, ol, dl, dd, figure, blockquote) { margin: 0; padding: 0; }
 .sb-root :where(ul, ol) { list-style: none; }
@@ -76,18 +78,19 @@
   min-block-size: 36px; padding-inline: var(--space-4);
   border: 1px solid transparent; border-radius: var(--radius-control);
   font-size: 13px; line-height: 19px; font-weight: 600; white-space: nowrap;
-  transition: background-color var(--dur-hover) var(--ease-out), transform var(--dur-press) var(--ease-out), border-color var(--dur-hover) var(--ease-out);
+  transition: background-color var(--dur-hover) var(--ease-out), transform var(--dur-release) var(--ease-spring), border-color var(--dur-hover) var(--ease-out);
 }
-.sb-btn:active:not(:disabled) { transform: scale(0.98); }
+/* Feedback starts on the press, not on release: the scale is applied at once and springs back when the press ends. */
+.sb-btn:active:not(:disabled) { transform: scale(var(--motion-press-scale)); transition-duration: var(--dur-hover), var(--dur-press), var(--dur-hover); }
 .sb-btn:disabled, .sb-btn[aria-disabled="true"] { opacity: 0.55; cursor: not-allowed; }
-.sb-btn--primary   { background: var(--sb-accent-strong); color: var(--sb-surface); }
+.sb-btn--primary   { background: var(--sb-accent-strong); color: var(--sb-on-accent); }
 .sb-btn--primary:hover:not(:disabled) { background: var(--sb-accent-text); }
 .sb-btn--secondary { background: var(--sb-surface); color: var(--sb-text-primary); border-color: var(--sb-control-border); }
 .sb-btn--secondary:hover:not(:disabled) { background: var(--sb-canvas); }
 .sb-btn--quiet     { background: transparent; color: var(--sb-accent-text); padding-inline: var(--space-2); }
-.sb-btn--quiet:hover:not(:disabled) { background: rgba(8, 127, 232, 0.08); }
+.sb-btn--quiet:hover:not(:disabled) { background: var(--sb-accent-tint); }
 .sb-btn--danger    { background: transparent; color: var(--sb-danger-text); padding-inline: var(--space-2); }
-.sb-btn--danger:hover:not(:disabled) { background: rgba(197, 59, 59, 0.08); }
+.sb-btn--danger:hover:not(:disabled) { background: var(--sb-danger-tint); }
 .sb-btn--sm { min-block-size: 30px; padding-inline: var(--space-3); border-radius: var(--radius-sm); font-size: 12px; line-height: 16px; }
 .sb-btn--block { display: flex; inline-size: 100%; }
 
@@ -95,27 +98,35 @@
   display: inline-flex; align-items: center; justify-content: center;
   inline-size: 32px; block-size: 32px; padding: 0; flex: none;
   border: 0; border-radius: var(--radius-sm); background: transparent; color: var(--sb-text-secondary);
-  transition: background-color var(--dur-hover) var(--ease-out), color var(--dur-hover) var(--ease-out);
+  transition: background-color var(--dur-hover) var(--ease-out), color var(--dur-hover) var(--ease-out), transform var(--dur-release) var(--ease-spring);
 }
-.sb-icon-btn:hover { background: rgba(30, 35, 45, 0.07); color: var(--sb-text-primary); }
+.sb-icon-btn:hover { background: var(--sb-hover); color: var(--sb-text-primary); }
+.sb-icon-btn:active { transform: scale(var(--motion-press-scale)); transition-duration: var(--dur-hover), var(--dur-hover), var(--dur-press); }
 
-/* ---- segmented navigation: level C for the active segment ---- */
+/* ---- segmented navigation: level C for the active segment ----
+   The active segment is one surface that glides between positions (spatial consistency): its place comes from --i (index) and --n (count). */
 .sb-segmented {
-  display: flex; gap: 2px; padding: 2px; border-radius: var(--radius-control); background: var(--sb-segment-track);
+  position: relative; display: flex; gap: 2px; padding: 2px; border-radius: var(--radius-control); background: var(--sb-segment-track);
+}
+.sb-segmented__thumb {
+  position: absolute; inset-block: 2px; inset-inline-start: 2px; pointer-events: none;
+  inline-size: calc((100% - 4px - (var(--n) - 1) * 2px) / var(--n));
+  border: 1px solid var(--sb-glass-c-border); border-radius: 8px;
+  background: var(--sb-glass-c-bg); box-shadow: var(--sb-glass-c-shadow);
+  transform: translateX(calc(var(--i) * (100% + 2px) * var(--sb-dir)));
+  transition: transform var(--dur-panel) var(--ease-spring);
 }
 .sb-segment {
-  flex: 1 1 0; min-inline-size: 0; min-block-size: 30px; padding-inline: var(--space-3);
+  position: relative; flex: 1 1 0; min-inline-size: 0; min-block-size: 30px; padding-inline: var(--space-3);
   border: 1px solid transparent; border-radius: 8px; background: transparent;
   /* Inactive text is the primary colour: the secondary grey on the segment track is only 4.3:1. The active segment is told
      apart by its level-C surface and heavier weight, not by a lighter text colour. */
   font-size: 13px; line-height: 19px; font-weight: 500; color: var(--sb-text-primary);
-  transition: background-color var(--dur-hover) var(--ease-out), box-shadow var(--dur-hover) var(--ease-out);
+  transition: background-color var(--dur-hover) var(--ease-out), transform var(--dur-release) var(--ease-spring);
 }
-.sb-segment:hover:not([aria-selected="true"]) { background: rgba(255, 255, 255, 0.5); }
-.sb-segment[aria-selected="true"] {
-  background: var(--sb-glass-c-bg); border-color: var(--sb-glass-c-border); box-shadow: var(--sb-glass-c-shadow);
-  color: var(--sb-text-primary); font-weight: 600;
-}
+.sb-segment:active { transform: scale(var(--motion-press-scale)); transition-duration: var(--dur-hover), var(--dur-press); }
+.sb-segment:hover:not([aria-selected="true"]) { background: var(--sb-segment-hover); }
+.sb-segment[aria-selected="true"] { color: var(--sb-text-primary); font-weight: 600; }
 
 /* ---- chips (always an icon or words, never colour alone) ---- */
 .sb-chip {
@@ -123,7 +134,7 @@
   padding: 1px var(--space-2); border-radius: 999px; background: var(--sb-skeleton);
   font-size: 11px; line-height: 15px; font-weight: 500; color: var(--sb-text-secondary); white-space: nowrap;
 }
-.sb-chip--verified { background: rgba(36, 138, 82, 0.1); color: var(--sb-success-text); }
+.sb-chip--verified { background: var(--sb-success-tint); color: var(--sb-success-text); }
 .sb-chip--pending .sb-icon { color: var(--sb-warning); }
 
 /* ---- stars ---- */
@@ -131,7 +142,7 @@
 .sb-stars .sb-star--on { color: var(--sb-star); }
 .sb-star-input { display: inline-flex; gap: var(--space-1); border: 0; padding: 0; margin: 0; }
 .sb-star-input legend { padding: 0; }
-.sb-star-input label { position: relative; cursor: pointer; color: var(--sb-star-empty); line-height: 0; padding: 2px; border-radius: 6px; }
+.sb-star-input label { position: relative; cursor: pointer; color: var(--sb-star-empty); line-height: 0; padding: 2px; border-radius: 6px; transition: color var(--dur-hover) var(--ease-out); }
 .sb-star-input input { position: absolute; opacity: 0; inline-size: 100%; block-size: 100%; inset: 0; margin: 0; cursor: pointer; }
 .sb-star-input label.is-on { color: var(--sb-star); }
 .sb-star-input label:has(input:focus-visible) { outline: 2px solid var(--sb-accent); outline-offset: 2px; }
@@ -147,8 +158,10 @@
   position: absolute; inset-block-start: 0; inline-size: 12px; block-size: 12px; border-radius: 50%;
   background: var(--sb-text-primary);
   inset-inline-start: calc((100% - 12px) * var(--p, 0.5));
-  transition: inset-inline-start var(--dur-panel) var(--ease-out);
+  transition: inset-inline-start var(--dur-panel) var(--ease-spring);
+  animation: sb-fit-in var(--dur-panel) var(--ease-spring) 80ms backwards;
 }
+@keyframes sb-fit-in { from { inset-inline-start: calc((100% - 12px) * 0.5); } }
 .sb-fit__labels { display: grid; grid-template-columns: 1fr 1fr 1fr; font-size: 11px; line-height: 15px; font-weight: 500; color: var(--sb-text-secondary); }
 .sb-fit__labels span:nth-child(2) { text-align: center; }
 .sb-fit__labels span:nth-child(3) { text-align: end; }
@@ -164,9 +177,9 @@
 .sb-notice { display: flex; gap: var(--space-3); align-items: flex-start; padding: var(--space-3) var(--space-4); border-radius: var(--radius-region); background: var(--sb-canvas); }
 .sb-notice__body { flex: 1 1 auto; min-inline-size: 0; display: flex; flex-direction: column; gap: var(--space-1); }
 .sb-notice__title { font-weight: 600; }
-.sb-notice--error { background: rgba(197, 59, 59, 0.07); }
+.sb-notice--error { background: var(--sb-danger-tint); }
 .sb-notice--error .sb-notice__title { color: var(--sb-danger-text); }
-.sb-notice--success { background: rgba(36, 138, 82, 0.08); }
+.sb-notice--success { background: var(--sb-success-tint); }
 .sb-notice--success .sb-notice__title { color: var(--sb-success-text); }
 .sb-notice--empty { flex-direction: column; align-items: flex-start; background: transparent; padding-inline: 0; }
 
@@ -208,8 +221,8 @@
 }
 .sb-switch__track::after {
   content: ""; position: absolute; inset-block-start: 2px; inset-inline-start: 2px; inline-size: 20px; block-size: 20px; border-radius: 50%;
-  background: var(--sb-surface); box-shadow: 0 1px 2px rgba(20, 30, 50, 0.25);
-  transition: inset-inline-start var(--dur-hover) var(--ease-out);
+  background: #FFFFFF; box-shadow: var(--sb-knob-shadow);
+  transition: inset-inline-start var(--dur-release) var(--ease-spring);
 }
 .sb-switch input:checked + .sb-switch__track { background: var(--sb-accent-strong); }
 .sb-switch input:checked + .sb-switch__track::after { inset-inline-start: 18px; }
@@ -233,6 +246,20 @@
 .sb-review__body--clamped { display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
 .sb-review__updates { margin-block-start: var(--space-1); padding-inline-start: var(--space-3); border-inline-start: 2px solid var(--sb-divider); display: flex; flex-direction: column; gap: var(--space-2); }
 
-@media (prefers-reduced-motion: reduce) {
-  .sb-btn:active:not(:disabled) { transform: none; }
+/* ---- entrances. A view or message that appears rises a few pixels and fades in. "Push" views come from the inline end, the
+   way forward points in this layout. Under reduced motion the distance is 0 and only the fade remains. ---- */
+@keyframes sb-enter { from { opacity: 0; transform: translateY(var(--motion-shift)); } }
+@keyframes sb-enter-push { from { opacity: 0; transform: translateX(calc(var(--motion-shift) * var(--sb-dir) * -1)); } }
+.sb-enter { animation: sb-enter var(--dur-panel) var(--ease-spring) backwards; }
+.sb-enter--push { animation-name: sb-enter-push; }
+.sb-notice { animation: sb-enter var(--dur-panel) var(--ease-spring) backwards; }
+
+/* ---- disclosure: a region that opens and closes in place. The grid-rows trick animates the height without measuring it. ---- */
+.sb-disclosure { display: grid; grid-template-rows: 0fr; transition: grid-template-rows var(--dur-panel) var(--ease-spring); }
+.sb-disclosure[data-open="true"] { grid-template-rows: 1fr; }
+.sb-disclosure__inner { min-block-size: 0; overflow: hidden; padding: 3px; margin: -3px; visibility: hidden; transition: visibility 0s linear var(--dur-panel); }
+.sb-disclosure[data-open="true"] > .sb-disclosure__inner { visibility: visible; transition-delay: 0s; }
+.sb-badge {
+  display: inline-grid; place-items: center; min-inline-size: 18px; block-size: 18px; padding-inline: 5px; border-radius: 9px;
+  background: var(--sb-text-primary); color: var(--sb-surface); font-size: 11px; line-height: 15px; font-weight: 600; font-variant-numeric: tabular-nums;
 }

@@ -4,6 +4,7 @@ import { h, render } from "preact";
 import baseCss from "@smartbuy/ui/base.css?inline";
 import tokensCss from "@smartbuy/ui/tokens.css?inline";
 import { needsOpaque, sampleBackdrop } from "./backdrop.ts";
+import { watchTheme } from "../lib/theme.ts";
 import stripCss from "./strip.css?inline";
 import { Strip, type StripProps } from "./Strip.tsx";
 
@@ -39,6 +40,9 @@ export function mountStrip(doc: Document, initial: Omit<StripProps, "opaque">): 
   shadow.append(style, container);
   doc.documentElement.append(host);
 
+  // The strip follows the theme chosen in the options (light by default), not the colours of the store's page.
+  const stopTheme = watchTheme(host, doc.defaultView);
+
   let props = initial;
   let opaque = true; // safest until the backdrop has been measured
   const draw = () => render(h(Strip, { ...props, opaque }), container);
@@ -61,6 +65,7 @@ export function mountStrip(doc: Document, initial: Omit<StripProps, "opaque">): 
       draw();
     },
     unmount() {
+      stopTheme();
       render(null, container);
       host.remove();
     },
